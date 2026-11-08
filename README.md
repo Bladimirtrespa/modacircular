@@ -7,7 +7,7 @@
 [![Tests](https://img.shields.io/badge/Pytest-21%2F21_Passing-10B981?style=for-the-badge&logo=pytest&logoColor=white)](https://docs.pytest.org/)
 [![License](https://img.shields.io/badge/Licencia-MIT-06B6D4?style=for-the-badge)](LICENSE)
 
-**ModaCircular** es una solución empresarial de software orientada a la **economía circular textil y el consumo responsable**. Permite a los usuarios intercambiar prendas y accesorios mediante dos sistemas complementarios y desacoplados:
+**ModaCircular** es una solución de software orientada a la **economía circular textil y el consumo sostenible**. Permite a los usuarios intercambiar prendas y accesorios mediante dos sistemas complementarios y desacoplados:
 1. **Adquisición por Puntos Dinámicos:** Valuación matemática algorítmica sin *hardcoding* calculada directamente en Microsoft SQL Server basada en sostenibilidad, material, estado de conservación y utilidad funcional.
 2. **Trueque Directo de Inventario N a M:** Negociación interactiva artículo por artículo con barra de balance de valor referencial en tiempo real, bloqueo preventivo y transacciones atómicas ACID.
 3. **Logística y Salas de Chat Auditadas:** Coordinación de entregas presenciales o domiciliarias con transportadora, número de guía y doble confirmación de recibido.
@@ -21,19 +21,19 @@ El proyecto sigue una arquitectura modular empresarial desacoplada mediante **Fl
 
 ```mermaid
 graph TD
-    Client[Navegador Web / Cliente HTTP] -->|Peticiones HTTP & AJAX con CSRF| App[Aplicación Flask 3.x - Blueprints]
-    App -->|Flask-Login / RBAC| Auth[Módulo de Autenticación & Seguridad]
-    App -->|Servicios de Dominio| Services[Lógica de Negocio: TruequeService, PublicacionService, etc.]
-    Services -->|SQLAlchemy 2.x ORM| Driver[pyodbc / ODBC Driver 17 for SQL Server]
-    Driver -->|Consultas Parametrizadas & Transacciones ACID| DB[(Microsoft SQL Server 2022\nDB_IntercambioRopa)]
+    Client["Navegador Web / Cliente HTTP"] -->|Peticiones HTTP & AJAX con CSRF| App["Aplicación Flask 3.x - Blueprints"]
+    App -->|Flask-Login / RBAC| Auth["Módulo de Autenticación & Seguridad"]
+    App -->|Servicios de Dominio| Services["Lógica de Negocio: TruequeService, PublicacionService, etc."]
+    Services -->|SQLAlchemy 2.x ORM| Driver["pyodbc / ODBC Driver 17 for SQL Server"]
+    Driver -->|Consultas Parametrizadas & Transacciones ACID| DB[("Microsoft SQL Server 2022<br/>DB_IntercambioRopa")]
     
     subgraph "Base de Datos: 16 Tablas Relacionales"
-        DB --> Maestras[Roles, Categorias, Materiales, Estados, Niveles]
-        DB --> Core[Usuarios, Prendas, Multimedia, Historial de Puntos]
-        DB --> Trueques[Ofertas_Trueque & Detalle_Articulos_Oferta]
-        DB --> ChatEnvios[Salas_Chat_Intercambio & Mensajes_Chat]
-        DB --> Auditoria[Reportes_Comportamiento_Estafa]
-        DB --> SQLFunc[dbo.fn_CalcularPuntosPrenda]
+        DB --> Maestras["Tablas Maestras: Roles, Categorias, Materiales, Estados, Niveles"]
+        DB --> Core["Entidades Core: Usuarios, Prendas, Multimedia, Historial de Puntos"]
+        DB --> Trueques["Módulo Trueque: Ofertas_Trueque & Detalle_Articulos_Oferta"]
+        DB --> ChatEnvios["Módulo Logística: Salas_Chat_Intercambio & Mensajes_Chat"]
+        DB --> Auditoria["Módulo Antifraude: Reportes_Comportamiento_Estafa"]
+        DB --> SQLFunc["Función Nativa: dbo.fn_CalcularPuntosPrenda"]
     end
 ```
 
@@ -68,7 +68,9 @@ La base de datos relacional `DB_IntercambioRopa` cuenta con **16 tablas altament
 
 Ningún cálculo, factor o bono se encuentra quemado en código Python. Toda la tasación reside en la función nativa de base de datos `dbo.fn_CalcularPuntosPrenda`:
 
-$$\text{Puntos} = \text{REDONDEAR}\Big(\big((\text{Puntaje\_Base} \times \text{Factor\_Material}) + \text{Bono\_Material}\big) \times \text{Factor\_Aspecto} + \text{Bono\_Utilidad}\Big)$$
+$$
+\text{Puntos} = \text{REDONDEAR}\Big(\big((\text{Puntaje\_Base} \times \text{Factor\_Material}) + \text{Bono\_Material}\big) \times \text{Factor\_Aspecto} + \text{Bono\_Utilidad}\Big)
+$$
 
 - **Determinismo y Trazabilidad:** La función garantiza que un artículo con los mismos atributos obtenga exactamente el mismo valor determinista.
 - **Auditoría Contable:** Cada cambio en el saldo de un usuario genera un asiento de auditoría en `dbo.Historial_Movimientos_Puntos` con saldo anterior y posterior.
@@ -131,7 +133,7 @@ El Panel de Administración (`/admin/tablas` y `/admin/usuarios`) ofrece gestió
 ## ⚙️ Instalación y Puesta en Marcha Local
 
 ### Prerrequisitos
-- **Python 3.11+** (Probado en Python 3.13.14).
+- **Python 3.11+** (Probado y optimizado en Python 3.13.14).
 - **Microsoft SQL Server 2019 / 2022** con instancia activa (ej. `localhost\SQLEXPRESS`).
 - **ODBC Driver 17 for SQL Server** instalado en el sistema operativo.
 
@@ -234,8 +236,17 @@ tests/test_trueques_csgo.py::test_rechazo_y_liberacion_trueque PASSED
 
 ---
 
+## 👨‍💻 Autor & Créditos
+
+- **Desarrollador Principal:** Bladimir Albanis Trespalacio Carvajal
+- **Correo Institucional:** `bladimirtrespalacio240073@correo.itm.edu.co`
+- **Correo de Plataforma:** `bladimir@intercambioropa.co`
+- **Institución:** Instituto Tecnológico Metropolitano (ITM) - Facultad de Ingenierías
+
+---
+
 ## 📄 Licencia
 
-Este proyecto se distribuye bajo la licencia **MIT**. Consulta el archivo `LICENSE` para más información.
+Este proyecto se distribuye bajo la licencia **MIT**. Consulta el archivo [`LICENSE`](LICENSE) para más información.
 
-Desarrollado con dedicación para el impulso de la **moda circular, la sostenibilidad ambiental y el software robusto**.
+Desarrollado para el impulso de la **moda circular, la sostenibilidad ambiental y la ingeniería de software robusta**.
