@@ -1,0 +1,200 @@
+{% extends "base.html" %}
+
+{% block titulo %}Dictamen Técnico de Joyería - Orden #{{ solicitud.id_solicitud_aprobacion }} - ModaCircular{% endblock %}
+
+{% block contenido %}
+<!-- Navegación Superior y Cabecera de Dictamen -->
+<div class="mb-4 d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+    <div>
+        <a href="{{ url_for('moderacion.bandeja') }}" class="btn btn-outline-secondary btn-sm mb-2" style="border-radius: var(--radio-boton);">
+            <i class="bi bi-arrow-left me-1"></i> Volver a la Bandeja de Moderación
+        </a>
+        <div class="d-flex align-items-center gap-2">
+            <span class="icono-marca" style="width: 38px; height: 38px; border-radius: 10px; background: linear-gradient(135deg, #8B5CF6, #F59E0B);">
+                <i class="bi bi-gem fs-5"></i>
+            </span>
+            <h3 class="fw-bold mb-0 text-dark" style="font-family: var(--fuente-titulos); letter-spacing: -0.02em;">
+                Peritaje Técnico de Joyería &bull; Orden #{{ solicitud.id_solicitud_aprobacion }}
+            </h3>
+        </div>
+    </div>
+    <span class="badge badge-pildora {% if solicitud.estado_revision == 'PENDIENTE' %}badge-cuenta-temporal{% elif solicitud.estado_revision == 'APROBADA' %}badge-familia-vegetal{% else %}badge-cuenta-permanente{% endif %} px-3 py-2 fs-6 shadow-sm">
+        <i class="bi bi-shield-check"></i> Estado: {{ solicitud.estado_revision }}
+    </span>
+</div>
+
+<div class="row g-4">
+    <!-- Columna Izquierda: Visor Multimedia de Evidencias de Contraste -->
+    <div class="col-lg-7">
+        <div class="tarjeta-vibrante p-4 mb-4">
+            <div class="d-flex align-items-center gap-2 mb-3">
+                <i class="bi bi-camera-reels-fill text-warning fs-5"></i>
+                <h5 class="fw-bold mb-0 text-dark" style="font-family: var(--fuente-titulos);">
+                    Inspección Visual y Peritaje Multimedia
+                </h5>
+            </div>
+            
+            {% set portada = prenda.archivo_portada %}
+            <div class="bg-dark rounded-4 mb-3 text-center d-flex align-items-center justify-content-center shadow-sm overflow-hidden" style="min-height: 420px; max-height: 520px;">
+                {% if portada %}
+                    {% if portada.tipo_archivo == 'VIDEO' %}
+                        <video controls class="w-100 rounded-4" style="max-height: 500px;">
+                            <source src="{{ url_for('static', filename=portada.ruta_archivo) }}" type="video/mp4">
+                            Navegador incompatible con video.
+                        </video>
+                    {% else %}
+                        <img src="{{ url_for('static', filename=portada.ruta_archivo) }}" class="img-fluid rounded-4" style="max-height: 500px; width: 100%; object-fit: contain;" alt="Evidencia de Joyería">
+                    {% endif %}
+                {% else %}
+                    <div class="text-white p-5">
+                        <i class="bi bi-image fs-1 d-block mb-2 text-secondary opacity-50"></i>
+                        <span class="fw-semibold">Sin evidencia de portada registrada</span>
+                    </div>
+                {% endif %}
+            </div>
+
+            <!-- Todas las evidencias adjuntas (fotos macro y video) -->
+            <h6 class="fw-bold text-muted small text-uppercase mb-2" style="letter-spacing: 0.04em;">
+                Archivos Probatorios Adjuntos ({{ prenda.archivos_multimedia.count() }}):
+            </h6>
+            <div class="row g-2">
+                {% for archivo in prenda.archivos_multimedia.all() %}
+                <div class="col-md-6">
+                    <div class="p-2 border rounded-3 bg-light shadow-sm">
+                        {% if archivo.tipo_archivo == 'VIDEO' %}
+                            <video controls class="w-100 rounded-2" style="max-height: 180px;">
+                                <source src="{{ url_for('static', filename=archivo.ruta_archivo) }}" type="video/mp4">
+                            </video>
+                            <small class="text-muted d-block mt-1 fw-bold"><i class="bi bi-camera-video me-1 text-warning"></i> Video de contraste y brillo</small>
+                        {% else %}
+                            <a href="{{ url_for('static', filename=archivo.ruta_archivo) }}" target="_blank" class="d-block overflow-hidden rounded-2">
+                                <img src="{{ url_for('static', filename=archivo.ruta_archivo) }}" class="w-100 rounded-2" style="height: 160px; object-fit: cover; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'" alt="Foto">
+                            </a>
+                            <small class="text-muted d-block mt-1"><i class="bi bi-arrows-fullscreen me-1 text-primary"></i> Clic para ver en tamaño completo</small>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Declaración del Propietario -->
+        <div class="tarjeta-vibrante p-4">
+            <h6 class="fw-bold text-dark text-uppercase small mb-2" style="letter-spacing: 0.04em;">
+                Motivo de Cambio Declarado por el Usuario (Atributo Obligatorio 7):
+            </h6>
+            <div class="p-3 bg-light rounded-4 border-start border-4 border-warning">
+                <p class="mb-0 text-dark fw-medium" style="font-family: var(--fuente-titulos); font-style: italic;">
+                    "{{ prenda.motivo_cambio }}"
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Columna Derecha: Ficha de la Pieza y Formularios de Dictamen -->
+    <div class="col-lg-5">
+        <!-- Ficha Técnica de Atributos Declarados -->
+        <div class="tarjeta-vibrante p-4 mb-4">
+            <div class="d-flex align-items-center justify-content-between mb-3">
+                <h5 class="fw-bold mb-0 text-dark d-flex align-items-center gap-2" style="font-family: var(--fuente-titulos);">
+                    <i class="bi bi-gem text-purple" style="color: var(--color-violeta);"></i> Atributos Declarados
+                </h5>
+                <span class="badge badge-pildora badge-familia-joya">{{ prenda.material.familia_material }}</span>
+            </div>
+
+            <div class="p-4 rounded-4 text-center mb-3 shadow-sm" style="background: linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%); border: 2px solid rgba(245, 158, 11, 0.4);">
+                <span class="text-dark small text-uppercase fw-bold d-block" style="letter-spacing: 0.05em; color: #92400E !important;">
+                    Puntos en Retención Preventiva
+                </span>
+                <div class="display-5 fw-bold my-1" style="font-family: var(--fuente-titulos); color: #B45309;">
+                    {{ prenda.puntos_valoracion }} <small class="fs-5 fw-semibold">pts</small>
+                </div>
+                <small class="text-muted fw-semibold">Se transferirán automáticamente al saldo disponible si apruebas</small>
+            </div>
+
+            <ul class="list-group list-group-flush small mb-2" style="font-size: 0.88rem;">
+                <li class="list-group-item d-flex justify-content-between px-0 py-2 bg-transparent">
+                    <span class="text-muted">Título del Artículo:</span>
+                    <strong class="text-end text-dark">{{ prenda.titulo_publicacion }}</strong>
+                </li>
+                <li class="list-group-item d-flex justify-content-between px-0 py-2 bg-transparent">
+                    <span class="text-muted">Material / Ley:</span>
+                    <strong class="text-end" style="color: #B45309;">{{ prenda.material.nombre_material }}</strong>
+                </li>
+                <li class="list-group-item d-flex justify-content-between px-0 py-2 bg-transparent">
+                    <span class="text-muted">Medida / Talla:</span>
+                    <strong class="text-end text-dark">{{ prenda.medida_largo_cm }} cm &bull; Talla: {{ prenda.talla }}</strong>
+                </li>
+                <li class="list-group-item d-flex justify-content-between px-0 py-2 bg-transparent">
+                    <span class="text-muted">Procedencia / Orfebre:</span>
+                    <strong class="text-end text-dark">{{ prenda.procedencia }}</strong>
+                </li>
+                <li class="list-group-item d-flex justify-content-between px-0 py-2 bg-transparent">
+                    <span class="text-muted">Estado de Conservación:</span>
+                    <span class="text-end text-success fw-bold">{{ prenda.estado_aspecto.nombre_estado }}</span>
+                </li>
+                <li class="list-group-item d-flex justify-content-between px-0 py-2 bg-transparent">
+                    <span class="text-muted">Usuario Solicitante:</span>
+                    <span class="text-end fw-bold text-dark">{{ prenda.propietario.nombre_completo }}</span>
+                </li>
+                <li class="list-group-item d-flex justify-content-between px-0 py-2 bg-transparent">
+                    <span class="text-muted">Saldo Disponible del Usuario:</span>
+                    <strong class="text-end text-success">{{ prenda.propietario.saldo_puntos_disponibles }} pts</strong>
+                </li>
+            </ul>
+        </div>
+
+        {% if solicitud.estado_revision == 'PENDIENTE' %}
+        <!-- Formulario 1: Aprobación -->
+        <div class="tarjeta-vibrante p-4 mb-4 border-start border-success border-4">
+            <h5 class="fw-bold text-success mb-2" style="font-family: var(--fuente-titulos);">
+                <i class="bi bi-check-circle-fill me-1"></i> Aprobar Autenticidad y Liberar Puntos
+            </h5>
+            <p class="text-muted small mb-3">
+                Al aprobar, el artículo pasará a estado <strong>PUBLICADA</strong> y los <strong>{{ prenda.puntos_valoracion }} puntos</strong> se transferirán inmediatamente del saldo retenido al <u>saldo disponible</u> del oferente.
+            </p>
+            <form action="{{ url_for('moderacion.aprobar', id_solicitud=solicitud.id_solicitud_aprobacion) }}" method="POST">
+                <div class="mb-3">
+                    <label class="form-label small fw-bold text-dark">Dictamen u Observaciones de Aprobación (Opcional):</label>
+                    <textarea name="observaciones" class="form-control" rows="2" placeholder="Ej. Contrastes de ley verificados conforme, metales nobles sin adulteración."></textarea>
+                </div>
+                <div class="d-grid">
+                    <button type="submit" class="btn btn-vibrante-esmeralda justify-content-center py-2" onclick="return confirm('¿Confirmas la aprobación técnica de esta joya y la transferencia de puntos disponibles?');">
+                        <i class="bi bi-check-lg me-1"></i> Aprobar y Acreditar Puntos
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Formulario 2: Rechazo -->
+        <div class="tarjeta-vibrante p-4 border-start border-danger border-4">
+            <h5 class="fw-bold text-danger mb-2" style="font-family: var(--fuente-titulos);">
+                <i class="bi bi-x-circle-fill me-1"></i> Rechazar Solicitud
+            </h5>
+            <p class="text-muted small mb-3">
+                Si la pieza no cumple con los contrastes o fotos suficientes, se marcará como <strong>RECHAZADA</strong> y los puntos retenidos serán descontados sin afectar su saldo disponible.
+            </p>
+            <form action="{{ url_for('moderacion.rechazar', id_solicitud=solicitud.id_solicitud_aprobacion) }}" method="POST">
+                <div class="mb-3">
+                    <label class="form-label small fw-bold text-danger">Motivo Obligatorio del Rechazo:</label>
+                    <textarea name="motivo_rechazo" class="form-control" rows="2" required placeholder="Describe con precisión por qué se desestima (ej. ausencia de sello de contraste visible, evidencia insuficiente)..."></textarea>
+                </div>
+                <div class="d-grid">
+                    <button type="submit" class="btn btn-outline-danger fw-bold py-2" style="border-radius: var(--radio-boton);" onclick="return confirm('¿Estás seguro de rechazar esta solicitud de joyería?');">
+                        <i class="bi bi-slash-circle me-1"></i> Rechazar y Descartar Retención
+                    </button>
+                </div>
+            </form>
+        </div>
+        {% else %}
+        <div class="tarjeta-vibrante p-4 text-center">
+            <h5 class="fw-bold" style="font-family: var(--fuente-titulos);">Solicitud ya resuelta</h5>
+            <p class="text-muted small">Estado actual: <strong>{{ solicitud.estado_revision }}</strong></p>
+            <div class="p-3 bg-light rounded-3 text-muted small border">
+                Dictamen: {{ solicitud.observaciones_revisor or 'Sin observaciones registradas' }}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

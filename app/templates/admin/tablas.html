@@ -1,0 +1,804 @@
+{% extends "base.html" %}
+
+{% block titulo %}Administración de Tablas Paramétricas - ModaCircular{% endblock %}
+
+{% block contenido %}
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3 mb-4">
+    <div>
+        <h2 class="titulo-amigable mb-1">
+            <i class="bi bi-sliders text-success me-2"></i> Tablas Paramétricas del Motor de Puntos
+        </h2>
+        <p class="text-muted small mb-0">
+            Configuración dinámica en Microsoft SQL Server (<span class="badge bg-light text-dark border">DB_IntercambioRopa</span>). Cero hardcoding.
+        </p>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{{ url_for('admin_usuarios.listar_usuarios') }}" class="btn btn-outline-primary btn-sm rounded-pill fw-semibold px-3">
+            <i class="bi bi-people-fill me-1"></i> Ir a Gestión de Usuarios
+        </a>
+        <span class="badge badge-pildora badge-familia-joya px-3 py-2 fs-6">
+            <i class="bi bi-shield-lock-fill me-1"></i> Modo Administrador
+        </span>
+    </div>
+</div>
+
+<!-- Pestañas Nav-Pills con estilo vibrante -->
+<ul class="nav nav-pills gap-2 mb-4 p-2 bg-white rounded-4 shadow-sm border" id="adminTabs" role="tablist">
+    <li class="nav-item" role="presentation">
+        <button class="nav-link active fw-bold px-3 py-2 rounded-3" id="tab-materiales-btn" data-bs-toggle="tab" data-bs-target="#tab-materiales" type="button" role="tab">
+            <i class="bi bi-layers-fill text-success me-1"></i> Materiales ({{ materiales|length }})
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link fw-bold px-3 py-2 rounded-3" id="tab-categorias-btn" data-bs-toggle="tab" data-bs-target="#tab-categorias" type="button" role="tab">
+            <i class="bi bi-tags-fill text-primary me-1"></i> Categorías ({{ categorias|length }})
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link fw-bold px-3 py-2 rounded-3" id="tab-estados-btn" data-bs-toggle="tab" data-bs-target="#tab-estados" type="button" role="tab">
+            <i class="bi bi-stars text-warning me-1"></i> Estados de Aspecto ({{ estados_aspecto|length }})
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link fw-bold px-3 py-2 rounded-3" id="tab-utilidad-btn" data-bs-toggle="tab" data-bs-target="#tab-utilidad" type="button" role="tab">
+            <i class="bi bi-lightning-charge-fill text-danger me-1"></i> Niveles de Utilidad ({{ niveles_utilidad|length }})
+        </button>
+    </li>
+</ul>
+
+<div class="tab-content" id="adminTabsContent">
+
+    <!-- =======================================================================
+         1. PESTAÑA: CATÁLOGO DE MATERIALES (55 MATERIALES EN 6 FAMILIAS)
+         ======================================================================= -->
+    <div class="tab-pane fade show active" id="tab-materiales" role="tabpanel">
+        <div class="tarjeta-vibrante mb-4">
+            <div class="tarjeta-header-gradiente d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+                <div>
+                    <h5 class="fw-bold mb-0 text-success">
+                        <i class="bi bi-layers me-2"></i> Catálogo Maestro de Materiales
+                    </h5>
+                    <small class="text-muted">Gestión de multiplicadores, bonos, filtros de uso y moderación de joyería</small>
+                </div>
+                <button class="btn btn-vibrante-esmeralda btn-sm" data-bs-toggle="modal" data-bs-target="#modalCrearMaterial">
+                    <i class="bi bi-plus-lg"></i> Nuevo Material
+                </button>
+            </div>
+
+            <!-- Filtros por Familia y Uso -->
+            <div class="p-3 bg-light border-bottom">
+                <form method="GET" action="{{ url_for('admin.tablas') }}" class="row g-2 align-items-center">
+                    <div class="col-md-5">
+                        <select name="familia" class="form-select form-select-sm rounded-pill" onchange="this.form.submit()">
+                            <option value="">-- Todas las Familias de Materiales --</option>
+                            {% for f in familias_disponibles %}
+                            <option value="{{ f }}" {% if filtro_familia == f %}selected{% endif %}>{{ f }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <select name="uso" class="form-select form-select-sm rounded-pill" onchange="this.form.submit()">
+                            <option value="">-- Todos los Usos --</option>
+                            <option value="PRENDA" {% if filtro_uso == 'PRENDA' %}selected{% endif %}>Solo Prendas</option>
+                            <option value="ACCESORIO" {% if filtro_uso == 'ACCESORIO' %}selected{% endif %}>Solo Accesorios</option>
+                            <option value="AMBOS" {% if filtro_uso == 'AMBOS' %}selected{% endif %}>Ambos (Prenda y Accesorio)</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3 text-end">
+                        {% if filtro_familia or filtro_uso %}
+                        <a href="{{ url_for('admin.tablas') }}" class="btn btn-outline-secondary btn-sm rounded-pill">
+                            <i class="bi bi-x-circle me-1"></i> Limpiar Filtros
+                        </a>
+                        {% endif %}
+                    </div>
+                </form>
+            </div>
+
+            <div class="table-responsive">
+                <table class="table tabla-vibrante align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th class="ps-3">SKU</th>
+                            <th>Nombre del Material</th>
+                            <th>Familia Taxonómica</th>
+                            <th>Aplica A</th>
+                            <th class="text-center">Multiplicador</th>
+                            <th class="text-center">Bono Pts</th>
+                            <th>Sostenibilidad</th>
+                            <th class="text-center">Joyería</th>
+                            <th class="text-center">Estado</th>
+                            <th class="text-end pe-3">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for mat in materiales %}
+                        <tr class="{% if not mat.activo %}opacity-50 bg-light{% endif %}">
+                            <td class="ps-3 font-monospace fw-bold text-muted small">{{ mat.codigo_material }}</td>
+                            <td>
+                                <strong class="d-block text-dark">{{ mat.nombre_material }}</strong>
+                                <small class="text-muted d-block text-truncate" style="max-width: 250px;">{{ mat.descripcion_tecnica }}</small>
+                            </td>
+                            <td>
+                                <span class="badge badge-pildora {{ mat.obtener_clase_familia() }}">
+                                    {{ mat.familia_material }}
+                                </span>
+                            </td>
+                            <td>
+                                <span class="badge bg-light text-dark border small fw-semibold">
+                                    {{ mat.uso_principal }}
+                                </span>
+                            </td>
+                            <td class="text-center fw-bold text-success">
+                                {{ "%.2f"|format(mat.factor_multiplicador) }}x
+                            </td>
+                            <td class="text-center fw-bold text-warning">
+                                +{{ mat.bono_puntos_material }}
+                            </td>
+                            <td>
+                                <span class="badge badge-pildora {{ mat.obtener_clase_sostenibilidad() }}">
+                                    {{ mat.nivel_sostenibilidad }}
+                                </span>
+                            </td>
+                            <td class="text-center">
+                                {% if mat.es_metal_o_joya_preciosa %}
+                                <span class="badge badge-pildora badge-familia-joya" title="Exige aprobación de moderación previa">
+                                    <i class="bi bi-gem"></i> Joya
+                                </span>
+                                {% else %}
+                                <span class="text-muted small">-</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-center">
+                                {% if mat.activo %}
+                                <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-2">Activo</span>
+                                {% else %}
+                                <span class="badge bg-secondary-subtle text-secondary border rounded-pill px-2">Inactivo</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-end pe-3">
+                                <div class="btn-group btn-group-sm">
+                                    <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#modalEditarMaterial{{ mat.id_material }}" title="Editar material">
+                                        <i class="bi bi-pencil-square"></i>
+                                    </button>
+                                    <form method="POST" action="{{ url_for('admin.alternar_material', id_material=mat.id_material) }}" class="d-inline" onsubmit="return confirm('¿Confirmas alternar el estado del material?');">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        {% if mat.activo %}
+                                        <button type="submit" class="btn btn-outline-danger" title="Desactivar material">
+                                            <i class="bi bi-eye-slash"></i>
+                                        </button>
+                                        {% else %}
+                                        <button type="submit" class="btn btn-outline-success" title="Activar material">
+                                            <i class="bi bi-eye"></i>
+                                        </button>
+                                        {% endif %}
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+
+                        <!-- Modal de Edición Específico por Material -->
+                        <div class="modal fade" id="modalEditarMaterial{{ mat.id_material }}" tabindex="-1" aria-hidden="true">
+                            <div class="modal-dialog modal-lg">
+                                <div class="modal-content" style="border-radius: 20px;">
+                                    <form method="POST" action="{{ url_for('admin.editar_material', id_material=mat.id_material) }}">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        <div class="modal-header tarjeta-header-gradiente">
+                                            <h5 class="modal-title fw-bold text-success">
+                                                <i class="bi bi-pencil-square me-2"></i> Editar Material: {{ mat.nombre_material }}
+                                            </h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                                        </div>
+                                        <div class="modal-body p-4">
+                                            <div class="row g-3">
+                                                <div class="col-md-4">
+                                                    <label class="form-label fw-semibold small">Código SKU</label>
+                                                    <input type="text" name="codigo_material" class="form-control" value="{{ mat.codigo_material }}" required maxlength="25">
+                                                </div>
+                                                <div class="col-md-8">
+                                                    <label class="form-label fw-semibold small">Nombre del Material</label>
+                                                    <input type="text" name="nombre_material" class="form-control" value="{{ mat.nombre_material }}" required maxlength="100">
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label class="form-label fw-semibold small">Familia Taxonómica</label>
+                                                    <input type="text" name="familia_material" class="form-control" value="{{ mat.familia_material }}" required maxlength="60">
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label class="form-label fw-semibold small">Uso Principal</label>
+                                                    <select name="uso_principal" class="form-select">
+                                                        <option value="PRENDA" {% if mat.uso_principal == 'PRENDA' %}selected{% endif %}>PRENDA</option>
+                                                        <option value="ACCESORIO" {% if mat.uso_principal == 'ACCESORIO' %}selected{% endif %}>ACCESORIO</option>
+                                                        <option value="AMBOS" {% if mat.uso_principal == 'AMBOS' %}selected{% endif %}>AMBOS</option>
+                                                    </select>
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <label class="form-label fw-semibold small">Factor Multiplicador</label>
+                                                    <input type="number" step="0.05" min="0.10" max="15.00" name="factor_multiplicador" class="form-control" value="{{ mat.factor_multiplicador }}" required>
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <label class="form-label fw-semibold small">Bono de Puntos Adicional</label>
+                                                    <input type="number" min="0" max="2000" name="bono_puntos_material" class="form-control" value="{{ mat.bono_puntos_material }}" required>
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <label class="form-label fw-semibold small">Nivel Sostenibilidad (Máx 30)</label>
+                                                    <input type="text" name="nivel_sostenibilidad" class="form-control" value="{{ mat.nivel_sostenibilidad }}" required maxlength="30">
+                                                </div>
+                                                <div class="col-12">
+                                                    <label class="form-label fw-semibold small">Descripción Técnica</label>
+                                                    <textarea name="descripcion_tecnica" class="form-control" rows="2" maxlength="300">{{ mat.descripcion_tecnica }}</textarea>
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <div class="form-check form-switch mt-2">
+                                                        <input class="form-check-input" type="checkbox" name="es_metal_o_joya_preciosa" id="joya{{ mat.id_material }}" {% if mat.es_metal_o_joya_preciosa %}checked{% endif %}>
+                                                        <label class="form-check-label fw-semibold small" for="joya{{ mat.id_material }}">Es Joya Preciosa</label>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <div class="form-check form-switch mt-2">
+                                                        <input class="form-check-input" type="checkbox" name="requiere_aprobacion_especial" id="aprob{{ mat.id_material }}" {% if mat.requiere_aprobacion_especial %}checked{% endif %}>
+                                                        <label class="form-check-label fw-semibold small" for="aprob{{ mat.id_material }}">Requiere Aprobación</label>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <div class="form-check form-switch mt-2">
+                                                        <input class="form-check-input" type="checkbox" name="activo" id="activo{{ mat.id_material }}" {% if mat.activo %}checked{% endif %}>
+                                                        <label class="form-check-label fw-semibold small" for="activo{{ mat.id_material }}">Material Activo</label>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="modal-footer bg-light">
+                                            <button type="button" class="btn btn-secondary rounded-pill px-3" data-bs-dismiss="modal">Cancelar</button>
+                                            <button type="submit" class="btn btn-vibrante-esmeralda">Guardar Cambios</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- =======================================================================
+         2. PESTAÑA: CATEGORÍAS DE PRENDA Y ACCESORIO
+         ======================================================================= -->
+    <div class="tab-pane fade" id="tab-categorias" role="tabpanel">
+        <div class="tarjeta-vibrante mb-4">
+            <div class="tarjeta-header-gradiente d-flex justify-content-between align-items-center">
+                <div>
+                    <h5 class="fw-bold mb-0 text-primary">
+                        <i class="bi bi-tags me-2"></i> Categorías Taxonómicas
+                    </h5>
+                    <small class="text-muted">Puntajes base de partida para el cálculo de prendas y accesorios</small>
+                </div>
+                <button class="btn btn-vibrante-turquesa btn-sm" data-bs-toggle="modal" data-bs-target="#modalCrearCategoria">
+                    <i class="bi bi-plus-lg"></i> Nueva Categoría
+                </button>
+            </div>
+            <div class="table-responsive">
+                <table class="table tabla-vibrante align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th class="ps-3">ID</th>
+                            <th>Nombre de la Categoría</th>
+                            <th>Tipo de Artículo</th>
+                            <th class="text-center">Puntaje Base</th>
+                            <th>Descripción</th>
+                            <th class="text-center">Estado</th>
+                            <th class="text-end pe-3">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for cat in categorias %}
+                        <tr class="{% if not cat.activo %}opacity-50 bg-light{% endif %}">
+                            <td class="ps-3 text-muted fw-bold">{{ cat.id_categoria }}</td>
+                            <td><strong class="text-dark">{{ cat.nombre_categoria }}</strong></td>
+                            <td>
+                                <span class="badge {% if cat.tipo_articulo == 'PRENDA' %}bg-primary-subtle text-primary border border-primary-subtle{% else %}bg-info-subtle text-info border border-info-subtle{% endif %} rounded-pill px-2 fw-bold">
+                                    {{ cat.tipo_articulo }}
+                                </span>
+                            </td>
+                            <td class="text-center fw-bold text-success fs-6">{{ cat.puntaje_base }} pts</td>
+                            <td><small class="text-muted">{{ cat.descripcion or 'Sin descripción' }}</small></td>
+                            <td class="text-center">
+                                {% if cat.activo %}
+                                <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-2">Activa</span>
+                                {% else %}
+                                <span class="badge bg-secondary-subtle text-secondary border rounded-pill px-2">Inactiva</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-end pe-3">
+                                <div class="btn-group btn-group-sm">
+                                    <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#modalEditarCat{{ cat.id_categoria }}" title="Editar categoría">
+                                        <i class="bi bi-pencil-square"></i>
+                                    </button>
+                                    <form method="POST" action="{{ url_for('admin.alternar_categoria', id_categoria=cat.id_categoria) }}" class="d-inline">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        {% if cat.activo %}
+                                        <button type="submit" class="btn btn-outline-danger" title="Desactivar">
+                                            <i class="bi bi-eye-slash"></i>
+                                        </button>
+                                        {% else %}
+                                        <button type="submit" class="btn btn-outline-success" title="Activar">
+                                            <i class="bi bi-eye"></i>
+                                        </button>
+                                        {% endif %}
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+
+                        <!-- Modal Editar Categoría -->
+                        <div class="modal fade" id="modalEditarCat{{ cat.id_categoria }}" tabindex="-1" aria-hidden="true">
+                            <div class="modal-dialog">
+                                <div class="modal-content" style="border-radius: 20px;">
+                                    <form method="POST" action="{{ url_for('admin.editar_categoria', id_categoria=cat.id_categoria) }}">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        <div class="modal-header tarjeta-header-gradiente">
+                                            <h5 class="modal-title fw-bold text-primary">Editar Categoría: {{ cat.nombre_categoria }}</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                        </div>
+                                        <div class="modal-body p-4">
+                                            <div class="mb-3">
+                                                <label class="form-label fw-semibold small">Nombre de la Categoría</label>
+                                                <input type="text" name="nombre_categoria" class="form-control" value="{{ cat.nombre_categoria }}" required>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label fw-semibold small">Tipo de Artículo</label>
+                                                <select name="tipo_articulo" class="form-select">
+                                                    <option value="PRENDA" {% if cat.tipo_articulo == 'PRENDA' %}selected{% endif %}>PRENDA</option>
+                                                    <option value="ACCESORIO" {% if cat.tipo_articulo == 'ACCESORIO' %}selected{% endif %}>ACCESORIO</option>
+                                                </select>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label fw-semibold small">Puntaje Base (pts)</label>
+                                                <input type="number" min="1" max="1000" name="puntaje_base" class="form-control" value="{{ cat.puntaje_base }}" required>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label fw-semibold small">Descripción</label>
+                                                <textarea name="descripcion" class="form-control" rows="2">{{ cat.descripcion }}</textarea>
+                                            </div>
+                                            <div class="form-check form-switch">
+                                                <input class="form-check-input" type="checkbox" name="activo" id="activoCat{{ cat.id_categoria }}" {% if cat.activo %}checked{% endif %}>
+                                                <label class="form-check-label fw-semibold small" for="activoCat{{ cat.id_categoria }}">Categoría Activa</label>
+                                            </div>
+                                        </div>
+                                        <div class="modal-footer bg-light">
+                                            <button type="button" class="btn btn-secondary rounded-pill px-3" data-bs-dismiss="modal">Cancelar</button>
+                                            <button type="submit" class="btn btn-vibrante-turquesa">Guardar Cambios</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- =======================================================================
+         3. PESTAÑA: ESTADOS DE CONSERVACIÓN FÍSICA (ASPECTO)
+         ======================================================================= -->
+    <div class="tab-pane fade" id="tab-estados" role="tabpanel">
+        <div class="tarjeta-vibrante mb-4">
+            <div class="tarjeta-header-gradiente d-flex justify-content-between align-items-center">
+                <div>
+                    <h5 class="fw-bold mb-0 text-warning text-dark">
+                        <i class="bi bi-stars me-2 text-warning"></i> Estados de Conservación Física
+                    </h5>
+                    <small class="text-muted">Factor de conservación aplicado a la fórmula de puntos</small>
+                </div>
+                <button class="btn btn-vibrante-ambar btn-sm" data-bs-toggle="modal" data-bs-target="#modalCrearEstado">
+                    <i class="bi bi-plus-lg"></i> Nuevo Estado
+                </button>
+            </div>
+            <div class="table-responsive">
+                <table class="table tabla-vibrante align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th class="ps-3">ID</th>
+                            <th>Nombre del Estado</th>
+                            <th class="text-center">Factor Conservación</th>
+                            <th>Criterio Físico de Evaluación</th>
+                            <th class="text-center">Estado</th>
+                            <th class="text-end pe-3">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for est in estados_aspecto %}
+                        <tr class="{% if not est.activo %}opacity-50 bg-light{% endif %}">
+                            <td class="ps-3 text-muted fw-bold">{{ est.id_estado_aspecto }}</td>
+                            <td><strong class="text-dark">{{ est.nombre_estado }}</strong></td>
+                            <td class="text-center fw-bold text-success fs-6">{{ "%.2f"|format(est.factor_conservacion) }}x</td>
+                            <td><small class="text-muted">{{ est.descripcion_criterio }}</small></td>
+                            <td class="text-center">
+                                {% if est.activo %}
+                                <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-2">Activo</span>
+                                {% else %}
+                                <span class="badge bg-secondary-subtle text-secondary border rounded-pill px-2">Inactivo</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-end pe-3">
+                                <div class="btn-group btn-group-sm">
+                                    <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#modalEditarEst{{ est.id_estado_aspecto }}" title="Editar estado">
+                                        <i class="bi bi-pencil-square"></i>
+                                    </button>
+                                    <form method="POST" action="{{ url_for('admin.alternar_estado_aspecto', id_estado=est.id_estado_aspecto) }}" class="d-inline">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        {% if est.activo %}
+                                        <button type="submit" class="btn btn-outline-danger" title="Desactivar">
+                                            <i class="bi bi-eye-slash"></i>
+                                        </button>
+                                        {% else %}
+                                        <button type="submit" class="btn btn-outline-success" title="Activar">
+                                            <i class="bi bi-eye"></i>
+                                        </button>
+                                        {% endif %}
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+
+                        <!-- Modal Editar Estado -->
+                        <div class="modal fade" id="modalEditarEst{{ est.id_estado_aspecto }}" tabindex="-1" aria-hidden="true">
+                            <div class="modal-dialog">
+                                <div class="modal-content" style="border-radius: 20px;">
+                                    <form method="POST" action="{{ url_for('admin.editar_estado_aspecto', id_estado=est.id_estado_aspecto) }}">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        <div class="modal-header tarjeta-header-gradiente">
+                                            <h5 class="modal-title fw-bold text-warning text-dark">Editar Estado: {{ est.nombre_estado }}</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                        </div>
+                                        <div class="modal-body p-4">
+                                            <div class="mb-3">
+                                                <label class="form-label fw-semibold small">Nombre del Estado</label>
+                                                <input type="text" name="nombre_estado" class="form-control" value="{{ est.nombre_estado }}" required>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label fw-semibold small">Factor de Conservación (0.1 a 2.0)</label>
+                                                <input type="number" step="0.05" min="0.10" max="2.00" name="factor_conservacion" class="form-control" value="{{ est.factor_conservacion }}" required>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label fw-semibold small">Criterio Físico Descriptivo</label>
+                                                <textarea name="descripcion_criterio" class="form-control" rows="3">{{ est.descripcion_criterio }}</textarea>
+                                            </div>
+                                            <div class="form-check form-switch">
+                                                <input class="form-check-input" type="checkbox" name="activo" id="activoEst{{ est.id_estado_aspecto }}" {% if est.activo %}checked{% endif %}>
+                                                <label class="form-check-label fw-semibold small" for="activoEst{{ est.id_estado_aspecto }}">Estado Activo</label>
+                                            </div>
+                                        </div>
+                                        <div class="modal-footer bg-light">
+                                            <button type="button" class="btn btn-secondary rounded-pill px-3" data-bs-dismiss="modal">Cancelar</button>
+                                            <button type="submit" class="btn btn-vibrante-ambar">Guardar Cambios</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- =======================================================================
+         4. PESTAÑA: NIVELES DE UTILIDAD
+         ======================================================================= -->
+    <div class="tab-pane fade" id="tab-utilidad" role="tabpanel">
+        <div class="tarjeta-vibrante mb-4">
+            <div class="tarjeta-header-gradiente d-flex justify-content-between align-items-center">
+                <div>
+                    <h5 class="fw-bold mb-0 text-danger">
+                        <i class="bi bi-lightning-charge me-2"></i> Niveles de Utilidad y Demanda
+                    </h5>
+                    <small class="text-muted">Bono de puntos adicionales según la versatilidad de la prenda</small>
+                </div>
+                <button class="btn btn-danger btn-sm rounded-pill fw-bold px-3" data-bs-toggle="modal" data-bs-target="#modalCrearUtilidad">
+                    <i class="bi bi-plus-lg"></i> Nuevo Nivel
+                </button>
+            </div>
+            <div class="table-responsive">
+                <table class="table tabla-vibrante align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th class="ps-3">ID</th>
+                            <th>Nombre de la Utilidad</th>
+                            <th class="text-center">Bono de Puntos</th>
+                            <th class="text-center">Estado</th>
+                            <th class="text-end pe-3">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for ut in niveles_utilidad %}
+                        <tr class="{% if not ut.activo %}opacity-50 bg-light{% endif %}">
+                            <td class="ps-3 text-muted fw-bold">{{ ut.id_nivel_utilidad }}</td>
+                            <td><strong class="text-dark">{{ ut.nombre_utilidad }}</strong></td>
+                            <td class="text-center fw-bold text-success fs-6">+{{ ut.bono_puntos }} pts</td>
+                            <td class="text-center">
+                                {% if ut.activo %}
+                                <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-2">Activo</span>
+                                {% else %}
+                                <span class="badge bg-secondary-subtle text-secondary border rounded-pill px-2">Inactivo</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-end pe-3">
+                                <div class="btn-group btn-group-sm">
+                                    <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#modalEditarUt{{ ut.id_nivel_utilidad }}" title="Editar">
+                                        <i class="bi bi-pencil-square"></i>
+                                    </button>
+                                    <form method="POST" action="{{ url_for('admin.alternar_nivel_utilidad', id_nivel=ut.id_nivel_utilidad) }}" class="d-inline">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        {% if ut.activo %}
+                                        <button type="submit" class="btn btn-outline-danger" title="Desactivar">
+                                            <i class="bi bi-eye-slash"></i>
+                                        </button>
+                                        {% else %}
+                                        <button type="submit" class="btn btn-outline-success" title="Activar">
+                                            <i class="bi bi-eye"></i>
+                                        </button>
+                                        {% endif %}
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+
+                        <!-- Modal Editar Utilidad -->
+                        <div class="modal fade" id="modalEditarUt{{ ut.id_nivel_utilidad }}" tabindex="-1" aria-hidden="true">
+                            <div class="modal-dialog">
+                                <div class="modal-content" style="border-radius: 20px;">
+                                    <form method="POST" action="{{ url_for('admin.editar_nivel_utilidad', id_nivel=ut.id_nivel_utilidad) }}">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        <div class="modal-header tarjeta-header-gradiente">
+                                            <h5 class="modal-title fw-bold text-danger">Editar Nivel: {{ ut.nombre_utilidad }}</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                        </div>
+                                        <div class="modal-body p-4">
+                                            <div class="mb-3">
+                                                <label class="form-label fw-semibold small">Nombre del Nivel de Utilidad</label>
+                                                <input type="text" name="nombre_utilidad" class="form-control" value="{{ ut.nombre_utilidad }}" required>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label fw-semibold small">Bono de Puntos Adicionales</label>
+                                                <input type="number" min="0" max="500" name="bono_puntos" class="form-control" value="{{ ut.bono_puntos }}" required>
+                                            </div>
+                                            <div class="form-check form-switch">
+                                                <input class="form-check-input" type="checkbox" name="activo" id="activoUt{{ ut.id_nivel_utilidad }}" {% if ut.activo %}checked{% endif %}>
+                                                <label class="form-check-label fw-semibold small" for="activoUt{{ ut.id_nivel_utilidad }}">Nivel Activo</label>
+                                            </div>
+                                        </div>
+                                        <div class="modal-footer bg-light">
+                                            <button type="button" class="btn btn-secondary rounded-pill px-3" data-bs-dismiss="modal">Cancelar</button>
+                                            <button type="submit" class="btn btn-danger rounded-pill px-4">Guardar Cambios</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- =======================================================================
+     MODALES GLOBALES DE CREACIÓN
+     ======================================================================= -->
+
+<!-- Modal Crear Material -->
+<div class="modal fade" id="modalCrearMaterial" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content" style="border-radius: 20px;">
+            <form method="POST" action="{{ url_for('admin.crear_material') }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="modal-header tarjeta-header-gradiente">
+                    <h5 class="modal-title fw-bold text-success">
+                        <i class="bi bi-plus-circle me-2"></i> Registrar Nuevo Material en SQL Server
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold small">Código SKU Único</label>
+                            <input type="text" name="codigo_material" class="form-control" placeholder="Ej: TEX-REC-056" required maxlength="25">
+                        </div>
+                        <div class="col-md-8">
+                            <label class="form-label fw-semibold small">Nombre del Material</label>
+                            <input type="text" name="nombre_material" class="form-control" placeholder="Ej: Poliéster Marino Reciclado" required maxlength="100">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold small">Familia Taxonómica</label>
+                            <input type="text" name="familia_material" class="form-control" placeholder="Ej: Textil Sintético / Fibras Vegetales" required maxlength="60">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold small">Uso Principal</label>
+                            <select name="uso_principal" class="form-select">
+                                <option value="PRENDA">PRENDA</option>
+                                <option value="ACCESORIO">ACCESORIO</option>
+                                <option value="AMBOS" selected>AMBOS</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold small">Factor Multiplicador</label>
+                            <input type="number" step="0.05" min="0.10" max="15.00" name="factor_multiplicador" class="form-control" value="1.00" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold small">Bono de Puntos</label>
+                            <input type="number" min="0" max="2000" name="bono_puntos_material" class="form-control" value="0" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold small">Nivel Sostenibilidad (Máx 30)</label>
+                            <input type="text" name="nivel_sostenibilidad" class="form-control" value="Alto (Eco/Reciclado)" required maxlength="30">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold small">Descripción Técnica</label>
+                            <textarea name="descripcion_tecnica" class="form-control" rows="2" placeholder="Composición, atributos térmicos, origen ecológico..." maxlength="300"></textarea>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-check form-switch mt-2">
+                                <input class="form-check-input" type="checkbox" name="es_metal_o_joya_preciosa" id="crearJoya">
+                                <label class="form-check-label fw-semibold small" for="crearJoya">Es Metal o Joya Preciosa</label>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-check form-switch mt-2">
+                                <input class="form-check-input" type="checkbox" name="requiere_aprobacion_especial" id="crearReqAprob">
+                                <label class="form-check-label fw-semibold small" for="crearReqAprob">Requiere Aprobación Previa</label>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-check form-switch mt-2">
+                                <input class="form-check-input" type="checkbox" name="activo" id="crearActivo" checked>
+                                <label class="form-check-label fw-semibold small" for="crearActivo">Activar Inmediatamente</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary rounded-pill px-3" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-vibrante-esmeralda">Registrar Material</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Crear Categoría -->
+<div class="modal fade" id="modalCrearCategoria" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content" style="border-radius: 20px;">
+            <form method="POST" action="{{ url_for('admin.crear_categoria') }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="modal-header tarjeta-header-gradiente">
+                    <h5 class="modal-title fw-bold text-primary">Nueva Categoría de Prenda o Accesorio</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small">Nombre de la Categoría</label>
+                        <input type="text" name="nombre_categoria" class="form-control" placeholder="Ej: Abrigo de Invierno" required maxlength="100">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small">Tipo de Artículo</label>
+                        <select name="tipo_articulo" class="form-select">
+                            <option value="PRENDA" selected>PRENDA</option>
+                            <option value="ACCESORIO">ACCESORIO</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small">Puntaje Base (pts)</label>
+                        <input type="number" min="1" max="1000" name="puntaje_base" class="form-control" value="70" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small">Descripción</label>
+                        <textarea name="descripcion" class="form-control" rows="2" placeholder="Detalles de las prendas comprendidas..."></textarea>
+                    </div>
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" name="activo" id="crearCatActiva" checked>
+                        <label class="form-check-label fw-semibold small" for="crearCatActiva">Categoría Activa</label>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary rounded-pill px-3" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-vibrante-turquesa">Crear Categoría</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Crear Estado de Aspecto -->
+<div class="modal fade" id="modalCrearEstado" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content" style="border-radius: 20px;">
+            <form method="POST" action="{{ url_for('admin.crear_estado_aspecto') }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="modal-header tarjeta-header-gradiente">
+                    <h5 class="modal-title fw-bold text-warning text-dark">Nuevo Estado de Conservación Física</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small">Nombre del Estado</label>
+                        <input type="text" name="nombre_estado" class="form-control" placeholder="Ej: Impecable (Colección)" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small">Factor de Conservación (0.1 a 2.0)</label>
+                        <input type="number" step="0.05" min="0.10" max="2.00" name="factor_conservacion" class="form-control" value="1.00" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small">Criterio Físico Descriptivo</label>
+                        <textarea name="descripcion_criterio" class="form-control" rows="2" placeholder="Criterios para calificar la prenda en este estado..."></textarea>
+                    </div>
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" name="activo" id="crearEstActivo" checked>
+                        <label class="form-check-label fw-semibold small" for="crearEstActivo">Estado Activo</label>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary rounded-pill px-3" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-vibrante-ambar">Crear Estado</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Crear Nivel de Utilidad -->
+<div class="modal fade" id="modalCrearUtilidad" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content" style="border-radius: 20px;">
+            <form method="POST" action="{{ url_for('admin.crear_nivel_utilidad') }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="modal-header tarjeta-header-gradiente">
+                    <h5 class="modal-title fw-bold text-danger">Nuevo Nivel de Utilidad y Demanda</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small">Nombre del Nivel de Utilidad</label>
+                        <input type="text" name="nombre_utilidad" class="form-control" placeholder="Ej: Prenda Esencial de Uso Diario" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small">Bono de Puntos</label>
+                        <input type="number" min="0" max="500" name="bono_puntos" class="form-control" value="10" required>
+                    </div>
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" name="activo" id="crearUtActivo" checked>
+                        <label class="form-check-label fw-semibold small" for="crearUtActivo">Nivel Activo</label>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary rounded-pill px-3" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-danger rounded-pill px-4">Crear Nivel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Restaurar pestaña activa tras recargar o enviar formularios
+    document.addEventListener("DOMContentLoaded", function() {
+        const hash = window.location.hash;
+        if (hash) {
+            const botonTab = document.querySelector(`button[data-bs-target="${hash}"]`);
+            if (botonTab) {
+                const tab = new bootstrap.Tab(botonTab);
+                tab.show();
+            }
+        }
+    });
+</script>
+{% endblock %}

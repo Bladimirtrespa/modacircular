@@ -1,0 +1,544 @@
+{% extends "base.html" %}
+
+{% block titulo %}Gestión de Usuarios y Suspensiones - ModaCircular{% endblock %}
+
+{% block contenido %}
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3 mb-4">
+    <div>
+        <h2 class="titulo-amigable mb-1">
+            <i class="bi bi-people-fill text-primary me-2"></i> Gestión de Usuarios y Seguridad
+        </h2>
+        <p class="text-muted small mb-0">
+            Administración de cuentas, roles de acceso, auditoría de saldos y aplicación de suspensiones temporales y permanentes.
+        </p>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{{ url_for('admin.tablas') }}" class="btn btn-outline-success btn-sm rounded-pill fw-semibold px-3">
+            <i class="bi bi-sliders me-1"></i> Ir a Tablas Paramétricas
+        </a>
+        <button class="btn btn-vibrante-esmeralda btn-sm" data-bs-toggle="modal" data-bs-target="#modalCrearUsuario">
+            <i class="bi bi-person-plus-fill me-1"></i> Registrar Usuario
+        </button>
+    </div>
+</div>
+
+<!-- Tarjetas de Métricas de Cuentas -->
+<div class="row g-3 mb-4">
+    <div class="col-6 col-md-3">
+        <div class="tarjeta-vibrante p-3 d-flex align-items-center gap-3">
+            <div class="p-3 rounded-4 bg-primary-subtle text-primary fs-3">
+                <i class="bi bi-people"></i>
+            </div>
+            <div>
+                <span class="text-muted small fw-semibold d-block">Total Cuentas</span>
+                <h4 class="fw-bold mb-0 text-dark">{{ usuarios|length }}</h4>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="tarjeta-vibrante p-3 d-flex align-items-center gap-3">
+            <div class="p-3 rounded-4 bg-success-subtle text-success fs-3">
+                <i class="bi bi-check-circle"></i>
+            </div>
+            <div>
+                <span class="text-muted small fw-semibold d-block">Cuentas Activas</span>
+                <h4 class="fw-bold mb-0 text-success">
+                    {{ usuarios|selectattr('activo', 'equalto', True)|rejectattr('esta_suspendido')|list|length }}
+                </h4>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="tarjeta-vibrante p-3 d-flex align-items-center gap-3">
+            <div class="p-3 rounded-4 bg-warning-subtle text-warning fs-3">
+                <i class="bi bi-hourglass-split"></i>
+            </div>
+            <div>
+                <span class="text-muted small fw-semibold d-block">Suspensiones Temporales</span>
+                <h4 class="fw-bold mb-0 text-warning">
+                    {{ usuarios|selectattr('fecha_fin_suspension')|list|length }}
+                </h4>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="tarjeta-vibrante p-3 d-flex align-items-center gap-3">
+            <div class="p-3 rounded-4 bg-danger-subtle text-danger fs-3">
+                <i class="bi bi-slash-circle"></i>
+            </div>
+            <div>
+                <span class="text-muted small fw-semibold d-block">Suspensiones Permanentes</span>
+                <h4 class="fw-bold mb-0 text-danger">
+                    {{ usuarios|selectattr('activo', 'equalto', False)|list|length }}
+                </h4>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Filtros y Búsqueda -->
+<div class="tarjeta-vibrante p-3 mb-4">
+    <form method="GET" action="{{ url_for('admin_usuarios.listar_usuarios') }}" class="row g-2 align-items-center">
+        <div class="col-md-5">
+            <div class="input-group input-group-sm">
+                <span class="input-group-text bg-white border-end-0 rounded-start-pill text-muted">
+                    <i class="bi bi-search"></i>
+                </span>
+                <input type="text" name="q" class="form-control border-start-0 rounded-end-pill" placeholder="Buscar por nombre, correo electrónico o ciudad..." value="{{ termino_busqueda }}">
+            </div>
+        </div>
+        <div class="col-md-3">
+            <select name="rol" class="form-select form-select-sm rounded-pill">
+                <option value="">-- Todos los Roles --</option>
+                {% for r in roles %}
+                <option value="{{ r.id_rol }}" {% if filtro_rol == (r.id_rol|string) %}selected{% endif %}>{{ r.nombre_rol }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-2">
+            <select name="estado" class="form-select form-select-sm rounded-pill">
+                <option value="">-- Estado --</option>
+                <option value="1" {% if filtro_estado == '1' %}selected{% endif %}>Activos</option>
+                <option value="0" {% if filtro_estado == '0' %}selected{% endif %}>Suspendidos</option>
+            </select>
+        </div>
+        <div class="col-md-2 text-end d-flex gap-1">
+            <button type="submit" class="btn btn-vibrante-turquesa btn-sm w-100">
+                Filtrar
+            </button>
+            {% if termino_busqueda or filtro_rol or filtro_estado %}
+            <a href="{{ url_for('admin_usuarios.listar_usuarios') }}" class="btn btn-outline-secondary btn-sm rounded-pill" title="Limpiar">
+                <i class="bi bi-x-lg"></i>
+            </a>
+            {% endif %}
+        </div>
+    </form>
+</div>
+
+<!-- Tabla Principal de Usuarios -->
+<div class="tarjeta-vibrante">
+    <div class="table-responsive">
+        <table class="table tabla-vibrante align-middle mb-0">
+            <thead>
+                <tr>
+                    <th class="ps-4">Usuario</th>
+                    <th>Rol en Sistema</th>
+                    <th>Ubicación & Contacto</th>
+                    <th class="text-center">Billetera de Puntos</th>
+                    <th class="text-center">Estado de Cuenta</th>
+                    <th class="text-end pe-4">Gestión y Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for u in usuarios %}
+                <tr class="{% if u.esta_suspendido %}table-warning-subtle{% endif %}">
+                    <td class="ps-4">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="rounded-circle d-flex align-items-center justify-content-center text-white fw-bold shadow-sm" style="width: 42px; height: 42px; background: {% if u.es_administrador %}linear-gradient(135deg, #3B82F6, #1D4ED8){% elif u.es_moderador %}linear-gradient(135deg, #F59E0B, #B45309){% else %}linear-gradient(135deg, #10B981, #047857){% endif %};">
+                                {{ u.nombre_completo[:2]|upper }}
+                            </div>
+                            <div>
+                                <strong class="d-block text-dark">{{ u.nombre_completo }}</strong>
+                                <small class="text-muted font-monospace">{{ u.correo_electronico }}</small>
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        {% if u.es_administrador %}
+                        <span class="badge badge-pildora bg-primary text-white">
+                            <i class="bi bi-shield-lock"></i> ADMINISTRADOR
+                        </span>
+                        {% elif u.es_moderador %}
+                        <span class="badge badge-pildora bg-warning text-dark">
+                            <i class="bi bi-shield-check"></i> MODERADOR
+                        </span>
+                        {% else %}
+                        <span class="badge badge-pildora bg-light text-dark border">
+                            <i class="bi bi-person"></i> USUARIO
+                        </span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div class="small">
+                            <i class="bi bi-geo-alt text-danger me-1"></i> {{ u.ciudad_ubicacion }}<br>
+                            {% if u.direccion_predeterminada %}
+                            <span class="text-muted small d-block"><i class="bi bi-house-door text-info me-1"></i> {{ u.direccion_predeterminada }}</span>
+                            {% endif %}
+                            <span class="text-muted"><i class="bi bi-telephone text-secondary me-1"></i> {{ u.telefono or 'No registrado' }}</span>
+                            <div class="mt-1">
+                                <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill">
+                                    <i class="bi bi-shield-check me-1"></i> Reputación: {{ u.reputacion_trueques }} pts
+                                </span>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="text-center">
+                        <div class="d-flex flex-column gap-1 align-items-center">
+                            <span class="badge badge-pildora bg-success-subtle text-success border border-success-subtle">
+                                <i class="bi bi-wallet2"></i> {{ u.saldo_puntos_disponibles }} pts disp.
+                            </span>
+                            {% if u.saldo_puntos_retenidos > 0 %}
+                            <span class="badge badge-pildora bg-warning-subtle text-warning-emphasis border border-warning-subtle">
+                                <i class="bi bi-hourglass-split"></i> {{ u.saldo_puntos_retenidos }} pts reten.
+                            </span>
+                            {% endif %}
+                        </div>
+                    </td>
+                    <td class="text-center">
+                        {% if not u.activo and not u.fecha_fin_suspension %}
+                        <span class="badge badge-pildora badge-cuenta-permanente" title="{{ u.motivo_suspension or 'Sanción permanente' }}">
+                            <i class="bi bi-slash-circle-fill"></i> Suspendido Permanente
+                        </span>
+                        {% elif u.fecha_fin_suspension and u.esta_suspendido %}
+                        <span class="badge badge-pildora badge-cuenta-temporal" title="{{ u.motivo_suspension or 'Sanción temporal' }}">
+                            <i class="bi bi-clock-history"></i> Hasta {{ u.fecha_fin_suspension.strftime('%d/%m %H:%M') }}
+                        </span>
+                        {% else %}
+                        <span class="badge badge-pildora badge-cuenta-activa">
+                            <i class="bi bi-check-circle-fill"></i> Activo
+                        </span>
+                        {% endif %}
+                    </td>
+                    <td class="text-end pe-4">
+                        <div class="btn-group btn-group-sm">
+                            <!-- Botón Editar Datos -->
+                            <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#modalEditarUsuario{{ u.id_usuario }}" title="Editar datos y rol">
+                                <i class="bi bi-pencil-square"></i>
+                            </button>
+
+                            <!-- Botón Ajustar Saldo -->
+                            <button type="button" class="btn btn-outline-success" data-bs-toggle="modal" data-bs-target="#modalAjustarSaldo{{ u.id_usuario }}" title="Ajustar saldo y auditar">
+                                <i class="bi bi-coin"></i>
+                            </button>
+
+                            <!-- Botón Restablecer Clave -->
+                            <button type="button" class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#modalClaveUsuario{{ u.id_usuario }}" title="Restablecer contraseña">
+                                <i class="bi bi-key"></i>
+                            </button>
+
+                            <!-- Botón Suspender / Reactivar -->
+                            {% if u.esta_suspendido %}
+                            <form method="POST" action="{{ url_for('admin_usuarios.reactivar_usuario', id_usuario=u.id_usuario) }}" class="d-inline" onsubmit="return confirm('¿Confirmas levantar la suspensión y reactivar a este usuario?');">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <button type="submit" class="btn btn-success" title="Reactivar usuario">
+                                    <i class="bi bi-unlock-fill"></i>
+                                </button>
+                            </form>
+                            {% else %}
+                            <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#modalSuspenderUsuario{{ u.id_usuario }}" title="Suspender cuenta">
+                                <i class="bi bi-shield-slash"></i>
+                            </button>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+
+                <!-- =======================================================
+                     MODALES ESPECÍFICOS PARA EL USUARIO
+                     ======================================================= -->
+
+                <!-- 1. Modal Editar Usuario -->
+                <div class="modal fade" id="modalEditarUsuario{{ u.id_usuario }}" tabindex="-1" aria-hidden="true">
+                    <div class="modal-dialog">
+                        <div class="modal-content" style="border-radius: 20px;">
+                            <form method="POST" action="{{ url_for('admin_usuarios.editar_usuario', id_usuario=u.id_usuario) }}">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <div class="modal-header tarjeta-header-gradiente">
+                                    <h5 class="modal-title fw-bold text-primary">
+                                        <i class="bi bi-pencil-square me-2"></i> Editar Usuario
+                                    </h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                </div>
+                                <div class="modal-body p-4">
+                                    <div class="mb-3">
+                                        <label class="form-label fw-semibold small">Nombre Completo</label>
+                                        <input type="text" name="nombre_completo" class="form-control" value="{{ u.nombre_completo }}" required maxlength="120">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label fw-semibold small">Correo Electrónico</label>
+                                        <input type="email" name="correo_electronico" class="form-control" value="{{ u.correo_electronico }}" required maxlength="150">
+                                    </div>
+                                    <div class="row g-2 mb-3">
+                                        <div class="col-6">
+                                            <label class="form-label fw-semibold small">Teléfono</label>
+                                            <input type="text" name="telefono" class="form-control" value="{{ u.telefono or '' }}" maxlength="30">
+                                        </div>
+                                        <div class="col-6">
+                                            <label class="form-label fw-semibold small">Ciudad / Ubicación</label>
+                                            <input type="text" name="ciudad_ubicacion" class="form-control" value="{{ u.ciudad_ubicacion }}" required maxlength="100">
+                                        </div>
+                                    </div>
+                                    <div class="row g-2 mb-3">
+                                        <div class="col-8">
+                                            <label class="form-label fw-semibold small">Dirección Predeterminada (Envíos)</label>
+                                            <input type="text" name="direccion_predeterminada" class="form-control" value="{{ u.direccion_predeterminada or '' }}" placeholder="Calle, Carrera, Barrio o Apto" maxlength="250">
+                                        </div>
+                                        <div class="col-4">
+                                            <label class="form-label fw-semibold small">Reputación Trueque</label>
+                                            <input type="number" min="0" max="1000" name="reputacion_trueques" class="form-control" value="{{ u.reputacion_trueques }}">
+                                        </div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label fw-semibold small">Biografía Pública de Vitrina</label>
+                                        <textarea name="biografia_vitrina" class="form-control" rows="2" placeholder="Presentación en su vitrina de trueques..." maxlength="300">{{ u.biografia_vitrina or '' }}</textarea>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label fw-semibold small">Rol en la Plataforma</label>
+                                        <select name="id_rol" class="form-select">
+                                            {% for r in roles %}
+                                            <option value="{{ r.id_rol }}" {% if u.id_rol == r.id_rol %}selected{% endif %}>{{ r.nombre_rol }} ({{ r.descripcion }})</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" name="activo" id="activoU{{ u.id_usuario }}" {% if u.activo %}checked{% endif %}>
+                                        <label class="form-check-label fw-semibold small" for="activoU{{ u.id_usuario }}">Cuenta Activa</label>
+                                    </div>
+                                </div>
+                                <div class="modal-footer bg-light">
+                                    <button type="button" class="btn btn-secondary rounded-pill px-3" data-bs-dismiss="modal">Cancelar</button>
+                                    <button type="submit" class="btn btn-vibrante-turquesa">Guardar Cambios</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2. Modal Suspender Usuario (Temporal por tiempo o Permanente) -->
+                <div class="modal fade" id="modalSuspenderUsuario{{ u.id_usuario }}" tabindex="-1" aria-hidden="true">
+                    <div class="modal-dialog">
+                        <div class="modal-content" style="border-radius: 20px;">
+                            <form method="POST" action="{{ url_for('admin_usuarios.suspender_usuario', id_usuario=u.id_usuario) }}">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <div class="modal-header bg-danger text-white" style="border-top-left-radius: 20px; border-top-right-radius: 20px;">
+                                    <h5 class="modal-title fw-bold">
+                                        <i class="bi bi-shield-slash-fill me-2"></i> Sancionar / Suspender Cuenta
+                                    </h5>
+                                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                                </div>
+                                <div class="modal-body p-4">
+                                    <p class="small text-muted mb-3">
+                                        Estás aplicando una sanción a <strong>{{ u.nombre_completo }}</strong> (<span class="font-monospace">{{ u.correo_electronico }}</span>). Durante la suspensión no podrá iniciar sesión.
+                                    </p>
+
+                                    <!-- Tipo de Suspensión -->
+                                    <div class="mb-3">
+                                        <label class="form-label fw-semibold small d-block">Tipo de Suspensión</label>
+                                        <div class="form-check form-check-inline">
+                                            <input class="form-check-input" type="radio" name="tipo_suspension" id="suspTemp{{ u.id_usuario }}" value="TEMPORAL" checked onchange="document.getElementById('bloqueTiempo{{ u.id_usuario }}').style.display = 'block';">
+                                            <label class="form-check-label fw-semibold" for="suspTemp{{ u.id_usuario }}">Temporal (Por Tiempo)</label>
+                                        </div>
+                                        <div class="form-check form-check-inline">
+                                            <input class="form-check-input" type="radio" name="tipo_suspension" id="suspPerm{{ u.id_usuario }}" value="PERMANENTE" onchange="document.getElementById('bloqueTiempo{{ u.id_usuario }}').style.display = 'none';">
+                                            <label class="form-check-label fw-semibold text-danger" for="suspPerm{{ u.id_usuario }}">Permanente (Indefinida)</label>
+                                        </div>
+                                    </div>
+
+                                    <!-- Bloque de Tiempo para Suspensión Temporal -->
+                                    <div id="bloqueTiempo{{ u.id_usuario }}" class="p-3 bg-light rounded-3 mb-3 border">
+                                        <label class="form-label fw-semibold small">Duración de la Suspensión</label>
+                                        <div class="row g-2">
+                                            <div class="col-6">
+                                                <input type="number" min="1" max="365" name="duracion_valor" class="form-control" value="24">
+                                            </div>
+                                            <div class="col-6">
+                                                <select name="duracion_unidad" class="form-select">
+                                                    <option value="HORAS" selected>Horas</option>
+                                                    <option value="DIAS">Días</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <small class="text-muted d-block mt-1">Al terminar este plazo, el sistema reactivará automáticamente el acceso.</small>
+                                    </div>
+
+                                    <!-- Motivo Obligatorio -->
+                                    <div class="mb-3">
+                                        <label class="form-label fw-semibold small text-danger">Motivo de la Suspensión (Obligatorio para Auditoría)</label>
+                                        <textarea name="motivo_suspension" class="form-control" rows="3" placeholder="Describe claramente el motivo de la infracción o sanción..." required maxlength="250"></textarea>
+                                    </div>
+                                </div>
+                                <div class="modal-footer bg-light">
+                                    <button type="button" class="btn btn-secondary rounded-pill px-3" data-bs-dismiss="modal">Cancelar</button>
+                                    <button type="submit" class="btn btn-danger rounded-pill px-4 fw-bold">Aplicar Suspensión</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 3. Modal Ajustar Saldo de Puntos -->
+                <div class="modal fade" id="modalAjustarSaldo{{ u.id_usuario }}" tabindex="-1" aria-hidden="true">
+                    <div class="modal-dialog">
+                        <div class="modal-content" style="border-radius: 20px;">
+                            <form method="POST" action="{{ url_for('admin_usuarios.ajustar_saldo', id_usuario=u.id_usuario) }}">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <div class="modal-header tarjeta-header-gradiente">
+                                    <h5 class="modal-title fw-bold text-success">
+                                        <i class="bi bi-coin me-2"></i> Ajustar Saldo: {{ u.nombre_completo.split()[0] }}
+                                    </h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                </div>
+                                <div class="modal-body p-4">
+                                    <div class="d-flex justify-content-between p-3 bg-light rounded-3 mb-3 border">
+                                        <div>
+                                            <span class="small text-muted d-block">Puntos Disponibles</span>
+                                            <strong class="fs-5 text-success">{{ u.saldo_puntos_disponibles }} pts</strong>
+                                        </div>
+                                        <div class="text-end">
+                                            <span class="small text-muted d-block">Puntos Retenidos</span>
+                                            <strong class="fs-5 text-warning">{{ u.saldo_puntos_retenidos }} pts</strong>
+                                        </div>
+                                    </div>
+
+                                    <div class="row g-2 mb-3">
+                                        <div class="col-6">
+                                            <label class="form-label fw-semibold small">Billetera a Modificar</label>
+                                            <select name="tipo_saldo" class="form-select">
+                                                <option value="disponibles" selected>Disponibles</option>
+                                                <option value="retenidos">Retenidos</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-6">
+                                            <label class="form-label fw-semibold small">Operación Contable</label>
+                                            <select name="operacion" class="form-select">
+                                                <option value="sumar" selected>Sumar (Crédito +)</option>
+                                                <option value="restar">Restar (Débito -)</option>
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label class="form-label fw-semibold small">Cantidad de Puntos</label>
+                                        <input type="number" min="1" max="100000" name="cantidad_puntos" class="form-control" placeholder="Ej: 50" required>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label class="form-label fw-semibold small text-danger">Motivo de Ajuste (Auditoría Obligatoria)</label>
+                                        <textarea name="motivo_ajuste" class="form-control" rows="2" placeholder="Ej: Compensación por incidencia en entrega / Corrección..." required maxlength="200"></textarea>
+                                    </div>
+                                </div>
+                                <div class="modal-footer bg-light">
+                                    <button type="button" class="btn btn-secondary rounded-pill px-3" data-bs-dismiss="modal">Cancelar</button>
+                                    <button type="submit" class="btn btn-vibrante-esmeralda">Registrar Asiento Contable</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 4. Modal Restablecer Contraseña -->
+                <div class="modal fade" id="modalClaveUsuario{{ u.id_usuario }}" tabindex="-1" aria-hidden="true">
+                    <div class="modal-dialog">
+                        <div class="modal-content" style="border-radius: 20px;">
+                            <form method="POST" action="{{ url_for('admin_usuarios.restablecer_contrasena', id_usuario=u.id_usuario) }}">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <div class="modal-header tarjeta-header-admin">
+                                    <h5 class="modal-title fw-bold text-dark">
+                                        <i class="bi bi-key-fill text-warning me-2"></i> Restablecer Contraseña
+                                    </h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                </div>
+                                <div class="modal-body p-4">
+                                    <p class="small text-muted mb-3">
+                                        Ingresa una nueva contraseña para <strong>{{ u.nombre_completo }}</strong>. El sistema la cifrará automáticamente con algoritmo criptográfico seguro.
+                                    </p>
+                                    <div class="mb-3">
+                                        <label class="form-label fw-semibold small">Nueva Contraseña</label>
+                                        <input type="password" name="nueva_contrasena" class="form-control" placeholder="Mínimo 6 caracteres..." required minlength="6">
+                                    </div>
+                                </div>
+                                <div class="modal-footer bg-light">
+                                    <button type="button" class="btn btn-secondary rounded-pill px-3" data-bs-dismiss="modal">Cancelar</button>
+                                    <button type="submit" class="btn btn-warning rounded-pill px-4 fw-bold">Actualizar Clave</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- =======================================================
+     MODAL CREAR USUARIO MANUALMENTE
+     ======================================================= -->
+<div class="modal fade" id="modalCrearUsuario" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content" style="border-radius: 20px;">
+            <form method="POST" action="{{ url_for('admin_usuarios.crear_usuario') }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="modal-header tarjeta-header-gradiente">
+                    <h5 class="modal-title fw-bold text-success">
+                        <i class="bi bi-person-plus-fill me-2"></i> Registrar Usuario en SQL Server
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small">Nombre Completo</label>
+                        <input type="text" name="nombre_completo" class="form-control" placeholder="Ej: Laura Sofía Mendoza" required maxlength="120">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small">Correo Electrónico</label>
+                        <input type="email" name="correo_electronico" class="form-control" placeholder="laura@ejemplo.com" required maxlength="150">
+                    </div>
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <label class="form-label fw-semibold small">Teléfono</label>
+                            <input type="text" name="telefono" class="form-control" placeholder="+57 300 123 4567" maxlength="30">
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label fw-semibold small">Ciudad / Ubicación</label>
+                            <input type="text" name="ciudad_ubicacion" class="form-control" placeholder="Medellín, Colombia" required maxlength="100">
+                        </div>
+                    </div>
+                    <div class="row g-2 mb-3">
+                        <div class="col-8">
+                            <label class="form-label fw-semibold small">Dirección Predeterminada</label>
+                            <input type="text" name="direccion_predeterminada" class="form-control" placeholder="Dirección para despacho y logística" maxlength="250">
+                        </div>
+                        <div class="col-4">
+                            <label class="form-label fw-semibold small">Reputación Inicial</label>
+                            <input type="number" min="0" max="1000" name="reputacion_trueques" class="form-control" value="100">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small">Biografía de Vitrina</label>
+                        <textarea name="biografia_vitrina" class="form-control" rows="2" placeholder="Presentación de la tienda o vitrina de trueques..." maxlength="300"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small">Rol en la Plataforma</label>
+                        <select name="id_rol" class="form-select">
+                            {% for r in roles %}
+                            <option value="{{ r.id_rol }}" {% if r.nombre_rol == 'USUARIO' %}selected{% endif %}>{{ r.nombre_rol }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <label class="form-label fw-semibold small">Contraseña Inicial</label>
+                            <input type="password" name="contrasena" class="form-control" placeholder="Mínimo 6 carácteres" required minlength="6">
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label fw-semibold small">Saldo Inicial (pts)</label>
+                            <input type="number" min="0" max="10000" name="saldo_puntos_disponibles" class="form-control" value="0">
+                        </div>
+                    </div>
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" name="activo" id="crearActivoUser" checked>
+                        <label class="form-check-label fw-semibold small" for="crearActivoUser">Activar cuenta inmediatamente</label>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary rounded-pill px-3" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-vibrante-esmeralda">Registrar Cuenta</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

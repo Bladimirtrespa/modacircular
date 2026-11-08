@@ -1,0 +1,199 @@
+{% extends "base.html" %}
+
+{% block titulo %}Mis Intercambios - ModaCircular{% endblock %}
+
+{% block contenido %}
+<!-- Encabezado de la Sección con Estilo Eco-Fashion Vibrante -->
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+    <div>
+        <div class="d-flex align-items-center gap-2 mb-1">
+            <span class="icono-marca" style="width: 38px; height: 38px; border-radius: 10px;">
+                <i class="bi bi-arrow-left-right fs-5"></i>
+            </span>
+            <h2 class="fw-bold mb-0 text-dark" style="font-family: var(--fuente-titulos); letter-spacing: -0.02em;">
+                Mis Intercambios Realizados
+            </h2>
+        </div>
+        <p class="text-muted small mb-0 ms-md-5 ps-md-2">
+            Registro histórico de prendas adquiridas con tus puntos y artículos cedidos a la comunidad
+        </p>
+    </div>
+    <a href="{{ url_for('catalogo.explorar') }}" class="btn btn-vibrante-turquesa">
+        <i class="bi bi-bag-plus-fill"></i> Explorar Catálogo
+    </a>
+</div>
+
+<!-- Pestañas de Navegación con Estilo Vibrante -->
+<ul class="nav nav-pills mb-4 p-1 bg-white rounded-4 shadow-sm border d-inline-flex" id="intercambiosTabs" role="tablist">
+    <li class="nav-item" role="presentation">
+        <button class="nav-link active fw-bold px-4 py-2" id="tab-adquiridos-btn" data-bs-toggle="pill" data-bs-target="#tab-adquiridos" type="button" role="tab" style="border-radius: var(--radio-boton);">
+            <i class="bi bi-bag-check-fill me-1 text-success"></i> Artículos Adquiridos ({{ compras|length }})
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link fw-bold px-4 py-2" id="tab-cedidos-btn" data-bs-toggle="pill" data-bs-target="#tab-cedidos" type="button" role="tab" style="border-radius: var(--radio-boton);">
+            <i class="bi bi-box-seam-fill me-1 text-info"></i> Prendas Cedidas a Otros ({{ ventas|length }})
+        </button>
+    </li>
+</ul>
+
+<div class="tab-content" id="intercambiosTabsContent">
+    <!-- Pestaña 1: Adquiridos (Compras con Puntos) -->
+    <div class="tab-pane fade show active" id="tab-adquiridos" role="tabpanel">
+        {% if compras %}
+        <div class="tabla-vibrante-contenedor mb-4">
+            <div class="tarjeta-header-gradiente d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="bi bi-bag-check-fill text-success fs-5"></i>
+                    <h5 class="fw-bold mb-0 text-dark" style="font-family: var(--fuente-titulos);">
+                        Prendas Canjeadas con tus Puntos
+                    </h5>
+                </div>
+                <span class="badge badge-pildora badge-familia-vegetal">Total: {{ compras|length }} artículos</span>
+            </div>
+
+            <div class="table-responsive">
+                <table class="table tabla-vibrante table-hover align-middle mb-0" style="font-size: 0.88rem;">
+                    <thead>
+                        <tr>
+                            <th class="ps-4">ID Transacción</th>
+                            <th>Artículo Adquirido</th>
+                            <th class="text-center">Puntos Canjeados</th>
+                            <th>Oferente Original</th>
+                            <th class="text-center">Estado de Entrega</th>
+                            <th>Fecha</th>
+                            <th class="text-end pe-4">Acción</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for c in compras %}
+                        <tr>
+                            <td class="ps-4 font-monospace small fw-bold text-muted">#TRX-{{ c.id_transaccion }}</td>
+                            <td>
+                                <strong class="text-dark d-block">{{ c.prenda.titulo_publicacion }}</strong>
+                                <small class="text-muted">
+                                    {{ c.prenda.categoria.nombre_categoria }} &bull; Talla: <span class="badge bg-light text-dark border">{{ c.prenda.talla }}</span>
+                                </small>
+                            </td>
+                            <td class="text-center">
+                                <span class="badge badge-pildora" style="background: #FEE2E2; color: #991B1B; border: 1px solid #FECACA; font-size: 0.85rem;">
+                                    <i class="bi bi-dash-circle-fill"></i> -{{ c.puntos_canjeados }} pts
+                                </span>
+                            </td>
+                            <td>
+                                <div class="fw-bold text-dark">{{ c.oferente.nombre_completo }}</div>
+                                <small class="text-muted"><i class="bi bi-geo-alt-fill text-danger me-1"></i>{{ c.oferente.ciudad_ubicacion }}</small>
+                            </td>
+                            <td class="text-center">
+                                <span class="badge badge-pildora badge-familia-vegetal">
+                                    <i class="bi bi-check-circle-fill"></i> {{ c.estado_entrega }}
+                                </span>
+                            </td>
+                            <td class="small text-muted">{{ c.fecha_transaccion.strftime('%d/%m/%Y %H:%M') }}</td>
+                            <td class="text-end pe-4">
+                                <a href="{{ url_for('prendas.detalle', id_prenda=c.prenda.id_prenda) }}" class="btn btn-outline-success btn-sm fw-bold px-3 py-1" style="border-radius: 8px;">
+                                    Ver Ficha <i class="bi bi-arrow-right ms-1"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% else %}
+        <!-- Estado Vacío Cuando No Ha Comprado -->
+        <div class="tarjeta-vibrante p-5 text-center my-4">
+            <div class="bg-success-subtle text-success p-3 rounded-circle d-inline-flex mx-auto mb-3">
+                <i class="bi bi-bag-x-fill fs-1"></i>
+            </div>
+            <h4 class="fw-bold" style="font-family: var(--fuente-titulos);">Aún no has adquirido prendas con tus puntos</h4>
+            <p class="text-muted small mb-4">Acumula puntos publicando prendas en desuso o canjea tu saldo disponible en el catálogo.</p>
+            <div>
+                <a href="{{ url_for('catalogo.explorar') }}" class="btn btn-vibrante-esmeralda">
+                    <i class="bi bi-grid-fill"></i> Explorar Catálogo de Intercambio
+                </a>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Pestaña 2: Cedidos (Prendas Propias que Otros Adquirieron) -->
+    <div class="tab-pane fade" id="tab-cedidos" role="tabpanel">
+        {% if ventas %}
+        <div class="tabla-vibrante-contenedor mb-4">
+            <div class="tarjeta-header-gradiente d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="bi bi-box-seam-fill text-primary fs-5"></i>
+                    <h5 class="fw-bold mb-0 text-dark" style="font-family: var(--fuente-titulos);">
+                        Prendas Cedidas a Otros Miembros de la Comunidad
+                    </h5>
+                </div>
+                <span class="badge badge-pildora badge-familia-sintetico">Total: {{ ventas|length }} artículos</span>
+            </div>
+
+            <div class="table-responsive">
+                <table class="table tabla-vibrante table-hover align-middle mb-0" style="font-size: 0.88rem;">
+                    <thead>
+                        <tr>
+                            <th class="ps-4">ID Transacción</th>
+                            <th>Tu Prenda Cedida</th>
+                            <th class="text-center">Puntos Ganados</th>
+                            <th>Adquirida Por</th>
+                            <th class="text-center">Estado</th>
+                            <th>Fecha</th>
+                            <th class="text-end pe-4">Acción</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for v in ventas %}
+                        <tr>
+                            <td class="ps-4 font-monospace small fw-bold text-muted">#TRX-{{ v.id_transaccion }}</td>
+                            <td>
+                                <strong class="text-dark d-block">{{ v.prenda.titulo_publicacion }}</strong>
+                                <small class="text-muted"><i class="bi bi-layers text-success me-1"></i>{{ v.prenda.material.nombre_material }}</small>
+                            </td>
+                            <td class="text-center">
+                                <span class="badge badge-pildora badge-familia-vegetal" style="font-size: 0.85rem;">
+                                    <i class="bi bi-plus-circle-fill"></i> +{{ v.puntos_canjeados }} pts
+                                </span>
+                            </td>
+                            <td>
+                                <div class="fw-bold text-dark">{{ v.comprador.nombre_completo }}</div>
+                                <small class="text-muted"><i class="bi bi-geo-alt-fill text-danger me-1"></i>{{ v.comprador.ciudad_ubicacion }}</small>
+                            </td>
+                            <td class="text-center">
+                                <span class="badge badge-pildora bg-primary text-white">
+                                    <i class="bi bi-truck"></i> {{ v.estado_entrega }}
+                                </span>
+                            </td>
+                            <td class="small text-muted">{{ v.fecha_transaccion.strftime('%d/%m/%Y %H:%M') }}</td>
+                            <td class="text-end pe-4">
+                                <a href="{{ url_for('prendas.detalle', id_prenda=v.prenda.id_prenda) }}" class="btn btn-outline-secondary btn-sm fw-bold px-3 py-1" style="border-radius: 8px;">
+                                    Ver Ficha
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% else %}
+        <!-- Estado Vacío Cuando No Ha Cedido Prendas -->
+        <div class="tarjeta-vibrante p-5 text-center my-4">
+            <div class="bg-primary-subtle text-primary p-3 rounded-circle d-inline-flex mx-auto mb-3">
+                <i class="bi bi-box-seam fs-1"></i>
+            </div>
+            <h4 class="fw-bold" style="font-family: var(--fuente-titulos);">Aún no has cedido artículos a otros usuarios</h4>
+            <p class="text-muted small mb-4">Tus prendas publicadas aparecerán aquí una vez otro miembro de la comunidad las adquiera.</p>
+            <div>
+                <a href="{{ url_for('prendas.publicar') }}" class="btn btn-vibrante-esmeralda">
+                    <i class="bi bi-plus-circle-fill"></i> Publicar una Prenda Ahora
+                </a>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

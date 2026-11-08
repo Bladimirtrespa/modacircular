@@ -1,0 +1,211 @@
+{% extends "base.html" %}
+
+{% block titulo %}Vitrina de Trueques - {{ usuario.nombre_completo }} - ModaCircular{% endblock %}
+
+{% block contenido %}
+<!-- Encabezado de Vitrina / Perfil de Trueque Directo -->
+<div class="tarjeta-vibrante p-4 p-md-5 mb-4 position-relative overflow-hidden" style="background: linear-gradient(135deg, #0F172A 0%, #1E293B 100%); color: white; border: 2px solid rgba(16, 185, 129, 0.3);">
+    <!-- Destello de fondo policromático -->
+    <div style="position: absolute; top: -50px; right: -50px; width: 250px; height: 250px; background: radial-gradient(circle, rgba(16, 185, 129, 0.25) 0%, transparent 70%); pointer-events: none;"></div>
+    <div style="position: absolute; bottom: -50px; left: 10%; width: 200px; height: 200px; background: radial-gradient(circle, rgba(139, 92, 246, 0.25) 0%, transparent 70%); pointer-events: none;"></div>
+
+    <div class="row align-items-center position-relative">
+        <div class="col-md-8">
+            <div class="d-flex align-items-center gap-3 mb-3">
+                <div class="rounded-circle d-flex align-items-center justify-content-center text-white fw-bold shadow-lg" style="width: 68px; height: 68px; font-size: 1.6rem; background: linear-gradient(135deg, #10B981, #06B6D4); border: 3px solid rgba(255,255,255,0.3);">
+                    {{ usuario.nombre_completo[:2]|upper }}
+                </div>
+                <div>
+                    <div class="d-flex align-items-center gap-2 flex-wrap">
+                        <h2 class="fw-bold mb-0 text-white" style="font-family: var(--fuente-titulos);">
+                            {{ usuario.nombre_completo }}
+                        </h2>
+                        {% if es_dueno %}
+                        <span class="badge bg-success text-white rounded-pill px-3 py-1">
+                            <i class="bi bi-person-check-fill me-1"></i> Tu Vitrina
+                        </span>
+                        {% endif %}
+                    </div>
+                    <div class="d-flex align-items-center gap-3 text-white-50 small mt-1 flex-wrap">
+                        <span><i class="bi bi-geo-alt-fill text-danger me-1"></i> {{ usuario.ciudad_ubicacion }}</span>
+                        <span><i class="bi bi-calendar-check me-1"></i> Miembro desde {{ usuario.fecha_registro.strftime('%m/%Y') }}</span>
+                        <span class="badge badge-pildora bg-primary-subtle text-primary fw-bold">
+                            <i class="bi bi-shield-fill-check me-1"></i> Reputación: {{ usuario.reputacion_trueques }} pts
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            {% if usuario.biografia_vitrina %}
+            <div class="p-3 rounded-3 mb-2" style="background: rgba(255, 255, 255, 0.08); border-left: 4px solid var(--color-esmeralda);">
+                <p class="mb-0 fst-italic text-light small">
+                    "{{ usuario.biografia_vitrina }}"
+                </p>
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="col-md-4 text-md-end mt-3 mt-md-0">
+            {% if not es_dueno and current_user.is_authenticated %}
+            <a href="{{ url_for('trueques.proponer_trueque', id_receptor=usuario.id_usuario) }}" class="btn btn-vibrante-esmeralda btn-lg py-3 px-4 shadow-lg w-100 w-md-auto">
+                <i class="bi bi-arrow-left-right me-2"></i> Proponer Trueque Directo
+            </a>
+            {% elif not current_user.is_authenticated %}
+            <a href="{{ url_for('autenticacion.iniciar_sesion') }}" class="btn btn-outline-light rounded-pill px-4">
+                <i class="bi bi-box-arrow-in-right me-1"></i> Inicia sesión para trueques
+            </a>
+            {% else %}
+            <a href="{{ url_for('prendas.publicar') }}" class="btn btn-vibrante-turquesa py-2 px-3 shadow">
+                <i class="bi bi-plus-circle me-1"></i> Añadir Ítem al Inventario
+            </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Barra de Métricas del Inventario -->
+    <div class="row g-2 mt-3 pt-3 border-top border-secondary">
+        <div class="col-6 col-md-3">
+            <span class="text-white-50 small d-block">Ítems en Vitrina</span>
+            <strong class="fs-4 text-white">{{ total_articulos }}</strong>
+        </div>
+        <div class="col-6 col-md-3">
+            <span class="text-white-50 small d-block">Valor Total Tasado</span>
+            <strong class="fs-4 text-warning">{{ valor_total_puntos }} pts</strong>
+        </div>
+        {% if es_dueno %}
+        <div class="col-6 col-md-3">
+            <span class="text-white-50 small d-block">Saldo en Billetera</span>
+            <strong class="fs-4 text-success">{{ usuario.saldo_puntos_disponibles }} pts</strong>
+        </div>
+        <div class="col-6 col-md-3">
+            <span class="text-white-50 small d-block">Dirección de Despacho</span>
+            <span class="text-white small text-truncate d-block">{{ usuario.direccion_predeterminada or 'Sin configurar' }}</span>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Filtros de Pestañas de Trueque Directo -->
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-center gap-3 mb-4">
+    <div class="btn-group p-1 bg-white rounded-pill shadow-sm border" role="group">
+        <a href="{{ url_for('inventario.ver_vitrina', id_usuario=usuario.id_usuario, filtro='todos') }}" class="btn btn-sm rounded-pill px-3 fw-bold {% if filtro == 'todos' %}btn-dark text-white{% else %}btn-light text-muted{% endif %}">
+            <i class="bi bi-grid-fill me-1"></i> Todos ({{ total_articulos }})
+        </a>
+        <a href="{{ url_for('inventario.ver_vitrina', id_usuario=usuario.id_usuario, filtro='trueque') }}" class="btn btn-sm rounded-pill px-3 fw-bold {% if filtro == 'trueque' %}btn-dark text-white{% else %}btn-light text-muted{% endif %}">
+            <i class="bi bi-box-seam-fill text-primary me-1"></i> Para Trueque
+        </a>
+        <a href="{{ url_for('inventario.ver_vitrina', id_usuario=usuario.id_usuario, filtro='puntos') }}" class="btn btn-sm rounded-pill px-3 fw-bold {% if filtro == 'puntos' %}btn-dark text-white{% else %}btn-light text-muted{% endif %}">
+            <i class="bi bi-coin text-warning me-1"></i> En Catálogo Puntos
+        </a>
+    </div>
+
+    <div class="text-muted small">
+        <i class="bi bi-info-circle me-1"></i> Los artículos en inventario pueden intercambiarse directamente o convertirse a puntos.
+    </div>
+</div>
+
+<!-- Cuadrícula de Artículos (Grid Trueque Directo) -->
+{% if prendas %}
+<div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-4 mb-5">
+    {% for p in prendas %}
+    <div class="col">
+        <div class="card h-100 border-0 shadow-sm rounded-4 overflow-hidden position-relative tarjeta-prenda-vibrante" style="transition: transform 0.2s, box-shadow 0.2s; border-top: 4px solid {% if p.material.es_metal_o_joya_preciosa %}var(--color-violeta){% elif p.estado_publicacion == 'EN_INVENTARIO' %}#06B6D4{% else %}#10B981{% endif %} !important;">
+            
+            <!-- Etiqueta de Puntos Referenciales Flotante -->
+            <div class="position-absolute top-0 end-0 m-2 z-1">
+                <span class="badge bg-dark bg-opacity-75 text-warning fw-bold px-2 py-1 rounded-pill shadow-sm" style="backdrop-filter: blur(4px);">
+                    <i class="bi bi-coin"></i> {{ p.puntos_valoracion }} pts
+                </span>
+            </div>
+
+            <!-- Etiqueta de Estado Flotante -->
+            <div class="position-absolute top-0 start-0 m-2 z-1">
+                {% if p.estado_publicacion == 'EN_INVENTARIO' %}
+                <span class="badge bg-info text-dark fw-bold rounded-pill shadow-sm">
+                    <i class="bi bi-box-seam"></i> Inventario
+                </span>
+                {% elif p.estado_publicacion == 'RESERVADA_TRUEQUE' %}
+                <span class="badge bg-warning text-dark fw-bold rounded-pill shadow-sm">
+                    <i class="bi bi-hourglass-split"></i> En Negociación
+                </span>
+                {% elif p.estado_publicacion == 'PUBLICADA' %}
+                <span class="badge bg-success text-white fw-bold rounded-pill shadow-sm">
+                    <i class="bi bi-check-circle"></i> Catálogo
+                </span>
+                {% elif p.estado_publicacion == 'PENDIENTE_APROBACION' %}
+                <span class="badge bg-purple text-white fw-bold rounded-pill shadow-sm" style="background-color: var(--color-violeta);">
+                    <i class="bi bi-gem"></i> Revisión Joya
+                </span>
+                {% endif %}
+            </div>
+
+            <!-- Imagen del Artículo con fallback -->
+            <div class="bg-light d-flex align-items-center justify-content-center position-relative" style="height: 220px; overflow: hidden;">
+                {% if p.archivo_portada %}
+                <img src="{{ url_for('static', filename=p.archivo_portada.ruta_archivo) }}" 
+                     alt="{{ p.titulo_publicacion }}" 
+                     class="w-100 h-100 object-fit-cover"
+                     onerror="this.onerror=null; this.src='https://placehold.co/400x400/10b981/ffffff?text={{ p.titulo_publicacion|urlencode }}';">
+                {% else %}
+                <div class="text-muted text-center p-3">
+                    <i class="bi bi-image fs-1 text-secondary opacity-50"></i>
+                    <span class="d-block small mt-1">Sin fotografía</span>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Cuerpo de la Tarjeta -->
+            <div class="card-body p-3 d-flex flex-column">
+                <span class="text-muted small text-uppercase fw-bold" style="font-size: 0.72rem;">
+                    {{ p.categoria.nombre_categoria }} &bull; Talla {{ p.talla }}
+                </span>
+                <h6 class="fw-bold text-dark text-truncate mb-1" title="{{ p.titulo_publicacion }}">
+                    {{ p.titulo_publicacion }}
+                </h6>
+                <div class="d-flex align-items-center gap-1 text-muted small mb-2">
+                    <i class="bi bi-tag-fill text-success" style="font-size: 0.75rem;"></i>
+                    <span class="text-truncate">{{ p.material.nombre_material }}</span>
+                </div>
+
+                <div class="mt-auto pt-2 border-top d-flex gap-2 align-items-center justify-content-between">
+                    <a href="{{ url_for('prendas.detalle', id_prenda=p.id_prenda) }}" class="btn btn-outline-secondary btn-sm rounded-pill flex-grow-1" title="Ver detalle completo">
+                        <i class="bi bi-eye"></i> Inspeccionar
+                    </a>
+
+                    <!-- Acción para el dueño: Convertir a Puntos -->
+                    {% if es_dueno and p.estado_publicacion == 'EN_INVENTARIO' %}
+                    <form method="POST" action="{{ url_for('inventario.convertir_a_puntos', id_prenda=p.id_prenda) }}" class="d-inline" onsubmit="return confirm('¿Deseas convertir este artículo a {{ p.puntos_valoracion }} puntos en tu billetera disponible? Pasará al catálogo general.');">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="btn btn-warning btn-sm rounded-pill fw-bold" title="Convertir a puntos inmediatamente">
+                            <i class="bi bi-coin"></i> A Puntos
+                        </button>
+                    </form>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="tarjeta-vibrante p-5 text-center my-4">
+    <div class="p-4 rounded-circle bg-light d-inline-flex align-items-center justify-content-center text-muted mb-3" style="width: 80px; height: 80px;">
+        <i class="bi bi-box-seam fs-1 text-secondary opacity-50"></i>
+    </div>
+    <h4 class="fw-bold text-dark">No hay artículos en esta vista</h4>
+    <p class="text-muted small mb-4">
+        {% if es_dueno %}
+        Aún no has añadido artículos a tu vitrina de trueque. ¡Publica tu primera prenda o accesorio ahora!
+        {% else %}
+        Este usuario aún no tiene artículos listados bajo el filtro seleccionado.
+        {% endif %}
+    </p>
+    {% if es_dueno %}
+    <a href="{{ url_for('prendas.publicar') }}" class="btn btn-vibrante-esmeralda px-4">
+        <i class="bi bi-plus-circle me-1"></i> Publicar Artículo
+    </a>
+    {% endif %}
+</div>
+{% endif %}
+
+{% endblock %}

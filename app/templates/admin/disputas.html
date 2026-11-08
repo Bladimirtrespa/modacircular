@@ -1,0 +1,190 @@
+{% extends "base.html" %}
+
+{% block titulo %}Bandeja de Auditoría Antifraude y Disputas - ModaCircular{% endblock %}
+
+{% block contenido %}
+<div class="mb-4">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3">
+        <div>
+            <span class="badge bg-danger text-white rounded-pill px-3 py-1 mb-2 fw-bold">
+                <i class="bi bi-shield-shaded me-1"></i> CONTROL ANTIFRAUDE & AUDITORÍA
+            </span>
+            <h2 class="fw-bold text-dark mb-1" style="font-family: var(--fuente-titulos);">
+                Bandeja de Disputas y Controversias
+            </h2>
+            <p class="text-muted mb-0">
+                Supervisión forense, congelamiento de chats, arbitraje administrativo y aplicación de sanciones.
+            </p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{{ url_for('admin_usuarios.listar_usuarios') }}" class="btn btn-outline-secondary btn-sm rounded-pill">
+                <i class="bi bi-people me-1"></i> Gestión de Usuarios
+            </a>
+            <a href="{{ url_for('admin.tablas') }}" class="btn btn-outline-primary btn-sm rounded-pill">
+                <i class="bi bi-sliders me-1"></i> Tablas Paramétricas
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- =======================================================================
+     TARJETAS DE MÉTRICAS FORENSES
+     ======================================================================= -->
+<div class="row g-3 mb-4">
+    <div class="col-6 col-md-3">
+        <div class="tarjeta-vibrante p-3 text-center border-start border-4 border-warning">
+            <span class="text-muted small fw-bold d-block text-uppercase">Pendientes</span>
+            <h3 class="fw-bold text-warning mb-0">{{ metricas.pendientes }}</h3>
+            <small class="text-muted" style="font-size: 0.72rem;">Sin intervención</small>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="tarjeta-vibrante p-3 text-center border-start border-4 border-info">
+            <span class="text-muted small fw-bold d-block text-uppercase">En Investigación</span>
+            <h3 class="fw-bold text-info mb-0">{{ metricas.en_investigacion }}</h3>
+            <small class="text-muted" style="font-size: 0.72rem;">Expedientes abiertos</small>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="tarjeta-vibrante p-3 text-center border-start border-4 border-danger">
+            <span class="text-muted small fw-bold d-block text-uppercase">Sancionados</span>
+            <h3 class="fw-bold text-danger mb-0">{{ metricas.resueltos }}</h3>
+            <small class="text-muted" style="font-size: 0.72rem;">Fraudes confirmados</small>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="tarjeta-vibrante p-3 text-center border-start border-4 border-success">
+            <span class="text-muted small fw-bold d-block text-uppercase">Desestimados</span>
+            <h3 class="fw-bold text-success mb-0">{{ metricas.desestimados }}</h3>
+            <small class="text-muted" style="font-size: 0.72rem;">Salas reactivadas</small>
+        </div>
+    </div>
+</div>
+
+<!-- =======================================================================
+     FILTROS Y BÚSQUEDA
+     ======================================================================= -->
+<div class="tarjeta-vibrante p-3 mb-4">
+    <form method="GET" action="{{ url_for('auditoria.listar_disputas') }}" class="row g-3 align-items-end">
+        <div class="col-md-4">
+            <label class="form-label small fw-semibold text-muted">Filtrar por Estado</label>
+            <select name="estado" class="form-select form-select-sm">
+                <option value="">-- Todos los Estados --</option>
+                <option value="PENDIENTE_REVISION" {% if filtro_estado == 'PENDIENTE_REVISION' %}selected{% endif %}>Pendiente de Revisión</option>
+                <option value="EN_INVESTIGACION" {% if filtro_estado == 'EN_INVESTIGACION' %}selected{% endif %}>En Investigación Pericial</option>
+                <option value="RESUELTO_CON_SANCION" {% if filtro_estado == 'RESUELTO_CON_SANCION' %}selected{% endif %}>Resuelto con Sanción</option>
+                <option value="DESESTIMADO" {% if filtro_estado == 'DESESTIMADO' %}selected{% endif %}>Desestimado</option>
+            </select>
+        </div>
+        <div class="col-md-5">
+            <label class="form-label small fw-semibold text-muted">Filtrar por Causal / Categoría</label>
+            <select name="categoria" class="form-select form-select-sm">
+                <option value="">-- Todas las Categorías --</option>
+                <option value="INTENTO_ESTAFA" {% if filtro_categoria == 'INTENTO_ESTAFA' %}selected{% endif %}>Intento de Estafa o Engaño</option>
+                <option value="ARTICULO_FALSIFICADO_O_DISTINTO" {% if filtro_categoria == 'ARTICULO_FALSIFICADO_O_DISTINTO' %}selected{% endif %}>Artículo Falsificado o Distinto</option>
+                <option value="NO_ENVIO_O_INCUMPLIMIENTO" {% if filtro_categoria == 'NO_ENVIO_O_INCUMPLIMIENTO' %}selected{% endif %}>No Envío o Incumplimiento</option>
+                <option value="LENGUAJE_OFENSIVO_O_ACOSO" {% if filtro_categoria == 'LENGUAJE_OFENSIVO_O_ACOSO' %}selected{% endif %}>Lenguaje Ofensivo o Acoso</option>
+                <option value="SOLICITUD_DINERO_EXTERNO" {% if filtro_categoria == 'SOLICITUD_DINERO_EXTERNO' %}selected{% endif %}>Solicitud de Dinero Externo</option>
+            </select>
+        </div>
+        <div class="col-md-3 d-flex gap-2">
+            <button type="submit" class="btn btn-vibrante-esmeralda btn-sm w-100">
+                <i class="bi bi-filter me-1"></i> Filtrar
+            </button>
+            <a href="{{ url_for('auditoria.listar_disputas') }}" class="btn btn-outline-secondary btn-sm">
+                <i class="bi bi-arrow-counterclockwise"></i>
+            </a>
+        </div>
+    </form>
+</div>
+
+<!-- =======================================================================
+     TABLA DE EXPEDIENTES DE AUDITORÍA
+     ======================================================================= -->
+<div class="tarjeta-vibrante p-4 mb-5">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+                <tr class="small text-uppercase text-muted">
+                    <th scope="col">Expediente</th>
+                    <th scope="col">Sala / Operación</th>
+                    <th scope="col">Denunciante</th>
+                    <th scope="col">Denunciado</th>
+                    <th scope="col">Causal Denunciada</th>
+                    <th scope="col">Fecha Radicación</th>
+                    <th scope="col">Estado</th>
+                    <th scope="col" class="text-end">Acción</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for r in reportes %}
+                <tr>
+                    <td>
+                        <strong class="text-danger fw-bold font-monospace">#REP-{{ r.id_reporte }}</strong>
+                        {% if r.ruta_evidencia_reporte %}
+                        <span class="badge bg-light text-dark border ms-1" title="Contiene foto o comprobante adjunto">
+                            <i class="bi bi-paperclip text-primary"></i>
+                        </span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <a href="{{ url_for('chat.ver_sala', codigo_sala=r.sala.codigo_sala) }}" class="fw-bold font-monospace text-decoration-none text-dark small" target="_blank">
+                            #{{ r.sala.codigo_sala }} <i class="bi bi-box-arrow-up-right ms-1 text-muted" style="font-size: 0.7rem;"></i>
+                        </a>
+                        <span class="d-block text-muted" style="font-size: 0.72rem;">
+                            {% if r.sala.tipo_operacion == 'TRUEQUE_INVENTARIO' %}Trueque Directo{% else %}Canje por Puntos{% endif %}
+                        </span>
+                    </td>
+                    <td>
+                        <strong class="d-block small text-dark">{{ r.denunciante.nombre_completo }}</strong>
+                        <span class="text-muted small" style="font-size: 0.72rem;">{{ r.denunciante.correo_electronico }}</span>
+                    </td>
+                    <td>
+                        <strong class="d-block small text-danger">{{ r.denunciado.nombre_completo }}</strong>
+                        <span class="text-muted small" style="font-size: 0.72rem;">
+                            Rep: {{ r.denunciado.reputacion_trueques }} pts
+                            {% if r.denunciado.esta_suspendido %}
+                            <span class="badge bg-danger text-white ms-1" style="font-size: 0.65rem;">Suspendido</span>
+                            {% endif %}
+                        </span>
+                    </td>
+                    <td>
+                        <span class="badge bg-danger-subtle text-danger border border-danger-subtle rounded-pill px-2 py-1 small fw-semibold">
+                            {{ r.categoria_reporte|replace('_', ' ') }}
+                        </span>
+                    </td>
+                    <td>
+                        <span class="small text-muted">{{ r.fecha_reporte.strftime('%d/%m/%Y') }}</span>
+                        <small class="d-block text-muted" style="font-size: 0.7rem;">{{ r.fecha_reporte.strftime('%H:%M') }}</small>
+                    </td>
+                    <td>
+                        {% if r.estado_reporte == 'PENDIENTE_REVISION' %}
+                        <span class="badge bg-warning text-dark fw-bold rounded-pill px-3">PENDIENTE</span>
+                        {% elif r.estado_reporte == 'EN_INVESTIGACION' %}
+                        <span class="badge bg-info text-white fw-bold rounded-pill px-3">EN REVISIÓN</span>
+                        {% elif r.estado_reporte == 'RESUELTO_CON_SANCION' %}
+                        <span class="badge bg-danger text-white fw-bold rounded-pill px-3">SANCIONADO</span>
+                        {% elif r.estado_reporte == 'DESESTIMADO' %}
+                        <span class="badge bg-success text-white fw-bold rounded-pill px-3">DESESTIMADO</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-end">
+                        <a href="{{ url_for('auditoria.ver_disputa', id_reporte=r.id_reporte) }}" class="btn btn-sm btn-outline-danger rounded-pill px-3">
+                            <i class="bi bi-search me-1"></i> Auditar
+                        </a>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="8" class="text-center py-5 text-muted">
+                        <i class="bi bi-shield-check fs-1 text-success d-block mb-2"></i>
+                        <h6 class="fw-bold text-dark">No hay disputas registradas bajo este criterio</h6>
+                        <p class="small text-muted mb-0">La plataforma opera sin incidentes de fraude pendientes de resolución.</p>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

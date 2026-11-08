@@ -1,0 +1,152 @@
+{% extends "base.html" %}
+
+{% block titulo %}Mis Ofertas de Trueque - ModaCircular{% endblock %}
+
+{% block contenido %}
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3 mb-4">
+    <div>
+        <h2 class="titulo-amigable mb-1">
+            <i class="bi bi-arrow-left-right text-success me-2"></i> Mis Ofertas de Trueque
+        </h2>
+        <p class="text-muted small mb-0">
+            Administra tus propuestas de trueque directo (recibidas y enviadas).
+        </p>
+    </div>
+    <a href="{{ url_for('catalogo.explorar') }}" class="btn btn-vibrante-esmeralda btn-sm">
+        <i class="bi bi-search me-1"></i> Explorar Catálogo y Vitrinas
+    </a>
+</div>
+
+<!-- Pestañas de Navegación -->
+<ul class="nav nav-pills gap-2 mb-4 p-2 bg-white rounded-4 shadow-sm border" id="truequesTabs" role="tablist">
+    <li class="nav-item" role="presentation">
+        <button class="nav-link active fw-bold px-4 py-2 rounded-3" id="tab-recibidas-btn" data-bs-toggle="tab" data-bs-target="#tab-recibidas" type="button" role="tab">
+            <i class="bi bi-inbox-fill text-warning me-1"></i> Ofertas Recibidas ({{ ofertas_recibidas|length }})
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link fw-bold px-4 py-2 rounded-3" id="tab-enviadas-btn" data-bs-toggle="tab" data-bs-target="#tab-enviadas" type="button" role="tab">
+            <i class="bi bi-send-fill text-primary me-1"></i> Ofertas Enviadas ({{ ofertas_enviadas|length }})
+        </button>
+    </li>
+</ul>
+
+<div class="tab-content" id="truequesTabsContent">
+    <!-- PESTAÑA 1: OFERTAS RECIBIDAS -->
+    <div class="tab-pane fade show active" id="tab-recibidas" role="tabpanel">
+        {% if ofertas_recibidas %}
+        <div class="d-flex flex-column gap-3">
+            {% for o in ofertas_recibidas %}
+            <div class="tarjeta-vibrante p-4 position-relative" style="border-left: 6px solid {% if o.estado_oferta == 'PENDIENTE' %}#F59E0B{% elif o.estado_oferta == 'ACEPTADA' %}#10B981{% elif o.estado_oferta == 'CONTRAOFERTA' %}#8B5CF6{% else %}#94A3B8{% endif %} !important;">
+                <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+                    <div>
+                        <div class="d-flex align-items-center gap-2 mb-2 flex-wrap">
+                            <span class="badge bg-light text-dark border font-monospace">#TRQ-{{ o.id_oferta_trueque }}</span>
+                            {% if o.estado_oferta == 'PENDIENTE' %}
+                            <span class="badge bg-warning text-dark fw-bold rounded-pill"><i class="bi bi-hourglass-split"></i> Pendiente de tu Respuesta</span>
+                            {% elif o.estado_oferta == 'ACEPTADA' %}
+                            <span class="badge bg-success text-white fw-bold rounded-pill"><i class="bi bi-check-circle-fill"></i> Trueque Aceptado</span>
+                            {% elif o.estado_oferta == 'CONTRAOFERTA' %}
+                            <span class="badge bg-purple text-white fw-bold rounded-pill" style="background-color: var(--color-violeta);"><i class="bi bi-arrow-repeat"></i> Contraoferta Enviada</span>
+                            {% elif o.estado_oferta == 'RECHAZADA' %}
+                            <span class="badge bg-danger text-white fw-bold rounded-pill"><i class="bi bi-x-circle-fill"></i> Rechazada</span>
+                            {% elif o.estado_oferta == 'CANCELADA' %}
+                            <span class="badge bg-secondary text-white fw-bold rounded-pill"><i class="bi bi-slash-circle"></i> Cancelada</span>
+                            {% endif %}
+                            <small class="text-muted"><i class="bi bi-clock"></i> {{ o.fecha_creacion.strftime('%d/%m/%Y %H:%M') }}</small>
+                        </div>
+
+                        <h5 class="fw-bold mb-1 text-dark">
+                            Propuesta de: <a href="{{ url_for('inventario.ver_vitrina', id_usuario=o.usuario_ofertante.id_usuario) }}" class="text-decoration-none text-primary">{{ o.usuario_ofertante.nombre_completo }}</a>
+                        </h5>
+
+                        <div class="d-flex align-items-center gap-3 small text-muted mt-2 flex-wrap">
+                            <span><i class="bi bi-gift-fill text-success"></i> Te ofrece: <strong>{{ o.articulos_ofrecidos|length }} artículo(s)</strong> ({{ o.puntos_totales_ofrecidos }} pts)</span>
+                            <span><i class="bi bi-box-seam-fill text-warning"></i> Te pide: <strong>{{ o.articulos_solicitados|length }} artículo(s)</strong> ({{ o.puntos_totales_solicitados }} pts)</span>
+                            <span class="badge {% if o.diferencia_puntos >= 0 %}bg-success-subtle text-success border border-success-subtle{% else %}bg-danger-subtle text-danger border border-danger-subtle{% endif %} rounded-pill">
+                                Diferencia: {{ "+" if o.diferencia_puntos > 0 else "" }}{{ o.diferencia_puntos }} pts
+                            </span>
+                        </div>
+
+                        {% if o.mensaje_propuesta %}
+                        <div class="p-2 bg-light rounded-3 mt-2 small text-dark fst-italic">
+                            "{{ o.mensaje_propuesta }}"
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="d-flex flex-column gap-2 flex-shrink-0">
+                        <a href="{{ url_for('trueques.detalle_oferta', id_oferta=o.id_oferta_trueque) }}" class="btn btn-vibrante-turquesa px-4">
+                            <i class="bi bi-eye-fill me-1"></i> Ver Propuesta
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="tarjeta-vibrante p-5 text-center">
+            <i class="bi bi-inbox fs-1 text-muted opacity-50 d-block mb-3"></i>
+            <h5 class="fw-bold text-dark">No tienes ofertas de trueque recibidas</h5>
+            <p class="text-muted small mb-0">Cuando otros usuarios exploren tu vitrina y te propongan un intercambio, aparecerán aquí.</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- PESTAÑA 2: OFERTAS ENVIADAS -->
+    <div class="tab-pane fade" id="tab-enviadas" role="tabpanel">
+        {% if ofertas_enviadas %}
+        <div class="d-flex flex-column gap-3">
+            {% for o in ofertas_enviadas %}
+            <div class="tarjeta-vibrante p-4 position-relative" style="border-left: 6px solid {% if o.estado_oferta == 'PENDIENTE' %}#06B6D4{% elif o.estado_oferta == 'ACEPTADA' %}#10B981{% elif o.estado_oferta == 'CONTRAOFERTA' %}#8B5CF6{% else %}#94A3B8{% endif %} !important;">
+                <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+                    <div>
+                        <div class="d-flex align-items-center gap-2 mb-2 flex-wrap">
+                            <span class="badge bg-light text-dark border font-monospace">#TRQ-{{ o.id_oferta_trueque }}</span>
+                            {% if o.estado_oferta == 'PENDIENTE' %}
+                            <span class="badge bg-info text-dark fw-bold rounded-pill"><i class="bi bi-hourglass-split"></i> Esperando Decisión</span>
+                            {% elif o.estado_oferta == 'ACEPTADA' %}
+                            <span class="badge bg-success text-white fw-bold rounded-pill"><i class="bi bi-check-circle-fill"></i> Trueque Aceptado</span>
+                            {% elif o.estado_oferta == 'CONTRAOFERTA' %}
+                            <span class="badge bg-purple text-white fw-bold rounded-pill" style="background-color: var(--color-violeta);"><i class="bi bi-arrow-repeat"></i> Contraofertada</span>
+                            {% elif o.estado_oferta == 'RECHAZADA' %}
+                            <span class="badge bg-danger text-white fw-bold rounded-pill"><i class="bi bi-x-circle-fill"></i> Rechazada</span>
+                            {% elif o.estado_oferta == 'CANCELADA' %}
+                            <span class="badge bg-secondary text-white fw-bold rounded-pill"><i class="bi bi-slash-circle"></i> Cancelada</span>
+                            {% endif %}
+                            <small class="text-muted"><i class="bi bi-clock"></i> {{ o.fecha_creacion.strftime('%d/%m/%Y %H:%M') }}</small>
+                        </div>
+
+                        <h5 class="fw-bold mb-1 text-dark">
+                            Enviada a: <a href="{{ url_for('inventario.ver_vitrina', id_usuario=o.usuario_receptor.id_usuario) }}" class="text-decoration-none text-primary">{{ o.usuario_receptor.nombre_completo }}</a>
+                        </h5>
+
+                        <div class="d-flex align-items-center gap-3 small text-muted mt-2 flex-wrap">
+                            <span><i class="bi bi-gift-fill text-success"></i> Ofreciste: <strong>{{ o.articulos_ofrecidos|length }} artículo(s)</strong> ({{ o.puntos_totales_ofrecidos }} pts)</span>
+                            <span><i class="bi bi-box-seam-fill text-warning"></i> Solicitaste: <strong>{{ o.articulos_solicitados|length }} artículo(s)</strong> ({{ o.puntos_totales_solicitados }} pts)</span>
+                            <span class="badge {% if o.diferencia_puntos >= 0 %}bg-success-subtle text-success border border-success-subtle{% else %}bg-danger-subtle text-danger border border-danger-subtle{% endif %} rounded-pill">
+                                Diferencia: {{ "+" if o.diferencia_puntos > 0 else "" }}{{ o.diferencia_puntos }} pts
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="d-flex flex-column gap-2 flex-shrink-0">
+                        <a href="{{ url_for('trueques.detalle_oferta', id_oferta=o.id_oferta_trueque) }}" class="btn btn-outline-primary px-4">
+                            <i class="bi bi-eye me-1"></i> Ver Estado
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="tarjeta-vibrante p-5 text-center">
+            <i class="bi bi-send fs-1 text-muted opacity-50 d-block mb-3"></i>
+            <h5 class="fw-bold text-dark">No has enviado ofertas de trueque aún</h5>
+            <p class="text-muted small mb-3">Visita las vitrinas de otros miembros y propón intercambios de artículos.</p>
+            <a href="{{ url_for('catalogo.explorar') }}" class="btn btn-vibrante-esmeralda">Explorar Miembros</a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

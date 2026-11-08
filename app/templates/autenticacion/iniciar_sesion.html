@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+
+{% block titulo %}Iniciar Sesión - ModaCircular{% endblock %}
+
+{% block contenido %}
+<div class="row justify-content-center my-4">
+    <div class="col-md-7 col-lg-5">
+        <div class="tarjeta-vibrante p-4 p-md-5">
+            <!-- Encabezado con Icono Vibrante -->
+            <div class="text-center mb-4">
+                <span class="icono-marca mx-auto mb-3" style="width: 54px; height: 54px; border-radius: 16px;">
+                    <i class="bi bi-person-lock fs-2"></i>
+                </span>
+                <h3 class="fw-bold mb-1 text-dark" style="font-family: var(--fuente-titulos); letter-spacing: -0.02em;">
+                    Iniciar Sesión
+                </h3>
+                <p class="text-muted small mb-0">
+                    Accede a tu billetera personal y explora artículos sostenibles
+                </p>
+            </div>
+
+            <form method="POST" novalidate>
+                {{ formulario.hidden_tag() }}
+
+                <!-- Campo Correo Electrónico -->
+                <div class="mb-3">
+                    <label class="form-label small fw-bold text-dark">
+                        <i class="bi bi-envelope-fill text-success me-1"></i> Correo Electrónico:
+                    </label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-light border-end-0"><i class="bi bi-at text-muted"></i></span>
+                        {{ formulario.correo_electronico(class="form-control border-start-0 ps-0" + (" is-invalid" if formulario.correo_electronico.errors else ""), placeholder="ejemplo@correo.com", autofocus=true) }}
+                    </div>
+                    {% for error in formulario.correo_electronico.errors %}
+                        <div class="invalid-feedback d-block">{{ error }}</div>
+                    {% endfor %}
+                </div>
+
+                <!-- Campo Contraseña -->
+                <div class="mb-3">
+                    <label class="form-label small fw-bold text-dark">
+                        <i class="bi bi-key-fill text-warning me-1"></i> Contraseña:
+                    </label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-light border-end-0"><i class="bi bi-lock text-muted"></i></span>
+                        {{ formulario.contrasena(class="form-control border-start-0 ps-0" + (" is-invalid" if formulario.contrasena.errors else ""), placeholder="••••••••") }}
+                    </div>
+                    {% for error in formulario.contrasena.errors %}
+                        <div class="invalid-feedback d-block">{{ error }}</div>
+                    {% endfor %}
+                </div>
+
+                <!-- Casilla Recordarme -->
+                <div class="mb-4 form-check">
+                    {{ formulario.recordarme(class="form-check-input") }}
+                    <label class="form-check-label text-muted small fw-medium" for="{{ formulario.recordarme.id }}">
+                        Mantener mi sesión abierta en este equipo
+                    </label>
+                </div>
+
+                <!-- Botón de Envío -->
+                <div class="d-grid mb-3">
+                    <button type="submit" class="btn btn-vibrante-esmeralda btn-lg justify-content-center py-2 fs-6">
+                        <i class="bi bi-box-arrow-in-right me-1"></i> Ingresar a mi Cuenta
+                    </button>
+                </div>
+
+                <!-- Enlace de Registro Público -->
+                <div class="text-center mt-4 border-top pt-3">
+                    <span class="text-muted small">¿Aún no tienes una cuenta?</span>
+                    <a href="{{ url_for('autenticacion.registro') }}" class="badge badge-pildora badge-familia-vegetal text-decoration-none ms-1">
+                        <i class="bi bi-person-plus-fill"></i> Crear Cuenta Gratis
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

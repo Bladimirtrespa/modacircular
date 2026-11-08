@@ -1,0 +1,50 @@
+# ==============================================================================
+# ARCHIVO DE EXCLUSIONES GIT: MODACIRCULAR v3.0
+# ==============================================================================
+
+# Entornos virtuales de Python
+venv/
+.venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# Cachés y binarios compilados de Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyc
+
+# Caché de pruebas automatizadas (pytest)
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+
+# Archivos de configuración sensible y variables de entorno
+.env
+.env.local
+.env.*.local
+
+# Archivos de base de datos local y temporales
+*.db
+*.sqlite3
+instance/
+
+# IDEs y editores de código
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Logs del sistema
+*.log
+logs/
+
+# Archivos multimedia temporales de pruebas grandes
+# Nota: Las fotos de demostración se preservan

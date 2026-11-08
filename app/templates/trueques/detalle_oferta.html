@@ -1,0 +1,238 @@
+{% extends "base.html" %}
+
+{% block titulo %}Detalle de Oferta #TRQ-{{ oferta.id_oferta_trueque }} - ModaCircular{% endblock %}
+
+{% block contenido %}
+<div class="mb-4">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3">
+        <div>
+            <div class="d-flex align-items-center gap-2 mb-1">
+                <span class="badge bg-light text-dark border font-monospace fs-6">#TRQ-{{ oferta.id_oferta_trueque }}</span>
+                {% if oferta.estado_oferta == 'PENDIENTE' %}
+                <span class="badge bg-warning text-dark fw-bold rounded-pill px-3"><i class="bi bi-hourglass-split"></i> PENDIENTE</span>
+                {% elif oferta.estado_oferta == 'ACEPTADA' %}
+                <span class="badge bg-success text-white fw-bold rounded-pill px-3"><i class="bi bi-check-circle-fill"></i> ACEPTADA</span>
+                {% elif oferta.estado_oferta == 'CONTRAOFERTA' %}
+                <span class="badge bg-purple text-white fw-bold rounded-pill px-3" style="background-color: var(--color-violeta);"><i class="bi bi-arrow-repeat"></i> CONTRAOFERTA</span>
+                {% elif oferta.estado_oferta == 'RECHAZADA' %}
+                <span class="badge bg-danger text-white fw-bold rounded-pill px-3"><i class="bi bi-x-circle-fill"></i> RECHAZADA</span>
+                {% elif oferta.estado_oferta == 'CANCELADA' %}
+                <span class="badge bg-secondary text-white fw-bold rounded-pill px-3"><i class="bi bi-slash-circle"></i> CANCELADA</span>
+                {% endif %}
+            </div>
+            <h3 class="fw-bold text-dark mb-0" style="font-family: var(--fuente-titulos);">
+                Propuesta de Intercambio de Artículos
+            </h3>
+            <small class="text-muted">Fecha de creación: {{ oferta.fecha_creacion.strftime('%d/%m/%Y a las %H:%M') }}</small>
+        </div>
+        <a href="{{ url_for('trueques.mis_ofertas') }}" class="btn btn-outline-secondary btn-sm rounded-pill">
+            <i class="bi bi-arrow-left me-1"></i> Volver a Mis Ofertas
+        </a>
+    </div>
+</div>
+
+<!-- Banner de Participantes y Balance de Puntos -->
+<div class="tarjeta-vibrante p-4 mb-4" style="background: linear-gradient(135deg, #0F172A 0%, #1E293B 100%); color: white;">
+    <div class="row align-items-center g-3 text-center text-md-start">
+        <div class="col-md-5">
+            <div class="d-flex align-items-center gap-3">
+                <div class="rounded-circle d-flex align-items-center justify-content-center text-white fw-bold shadow" style="width: 52px; height: 52px; background: linear-gradient(135deg, #10B981, #047857);">
+                    {{ oferta.usuario_ofertante.nombre_completo[:2]|upper }}
+                </div>
+                <div>
+                    <span class="text-white-50 small d-block">Ofertante (Emisor)</span>
+                    <strong class="text-white fs-5">{{ oferta.usuario_ofertante.nombre_completo }}</strong>
+                    <div class="small text-white-50">
+                        <i class="bi bi-geo-alt"></i> {{ oferta.usuario_ofertante.ciudad_ubicacion }} &bull;
+                        <span class="text-success"><i class="bi bi-shield-check"></i> {{ oferta.usuario_ofertante.reputacion_trueques }} pts rep.</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-2 text-center my-3 my-md-0">
+            <div class="d-inline-flex flex-column align-items-center">
+                <div class="rounded-circle bg-dark p-3 text-warning border border-secondary shadow mb-1">
+                    <i class="bi bi-arrow-left-right fs-4"></i>
+                </div>
+                <span class="badge {% if oferta.diferencia_puntos >= 0 %}bg-success{% else %}bg-danger{% endif %} rounded-pill px-3">
+                    {{ "+" if oferta.diferencia_puntos > 0 else "" }}{{ oferta.diferencia_puntos }} pts
+                </span>
+            </div>
+        </div>
+
+        <div class="col-md-5 text-md-end">
+            <div class="d-flex align-items-center justify-content-md-end gap-3">
+                <div>
+                    <span class="text-white-50 small d-block">Receptor (Destinatario)</span>
+                    <strong class="text-white fs-5">{{ oferta.usuario_receptor.nombre_completo }}</strong>
+                    <div class="small text-white-50">
+                        <i class="bi bi-geo-alt"></i> {{ oferta.usuario_receptor.ciudad_ubicacion }} &bull;
+                        <span class="text-warning"><i class="bi bi-shield-check"></i> {{ oferta.usuario_receptor.reputacion_trueques }} pts rep.</span>
+                    </div>
+                </div>
+                <div class="rounded-circle d-flex align-items-center justify-content-center text-white fw-bold shadow" style="width: 52px; height: 52px; background: linear-gradient(135deg, #F59E0B, #B45309);">
+                    {{ oferta.usuario_receptor.nombre_completo[:2]|upper }}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% if oferta.mensaje_propuesta %}
+    <div class="mt-3 pt-3 border-top border-secondary">
+        <span class="small text-white-50 fw-semibold d-block mb-1">Mensaje adjunto a la propuesta:</span>
+        <p class="mb-0 small fst-italic text-light bg-dark bg-opacity-50 p-3 rounded-3 border border-secondary">
+            "{{ oferta.mensaje_propuesta }}"
+        </p>
+    </div>
+    {% endif %}
+</div>
+
+<!-- =======================================================================
+     DOBLE PANEL VISUAL DE ARTÍCULOS EN LA OFERTA
+     ======================================================================= -->
+<div class="row g-4 mb-4">
+    <!-- PANEL 1: ARTÍCULOS OFRECIDOS -->
+    <div class="col-lg-6">
+        <div class="tarjeta-vibrante h-100 p-4" style="border-top: 5px solid #10B981 !important;">
+            <div class="d-flex justify-content-between align-items-center pb-2 mb-3 border-bottom">
+                <h5 class="fw-bold text-dark mb-0">
+                    <i class="bi bi-box-arrow-up-right text-success me-1"></i> Artículos Ofrecidos ({{ oferta.articulos_ofrecidos|length }})
+                </h5>
+                <span class="badge bg-success text-white fw-bold px-3 py-1 rounded-pill">
+                    Total: {{ oferta.puntos_totales_ofrecidos }} pts
+                </span>
+            </div>
+
+            <div class="row g-3">
+                {% for det in oferta.articulos_ofrecidos %}
+                <div class="col-12">
+                    <div class="card border rounded-3 p-2 d-flex flex-row align-items-center gap-3 shadow-sm">
+                        <div class="bg-light rounded-2 overflow-hidden flex-shrink-0" style="width: 80px; height: 80px;">
+                            {% if det.prenda.archivo_portada %}
+                            <img src="{{ url_for('static', filename=det.prenda.archivo_portada.ruta_archivo) }}" alt="{{ det.prenda.titulo_publicacion }}" class="w-100 h-100 object-fit-cover" onerror="this.onerror=null; this.src='https://placehold.co/100x100/10b981/ffffff?text=Prenda';">
+                            {% else %}
+                            <div class="w-100 h-100 d-flex align-items-center justify-content-center text-muted"><i class="bi bi-image"></i></div>
+                            {% endif %}
+                        </div>
+                        <div class="flex-grow-1 overflow-hidden">
+                            <strong class="d-block text-dark text-truncate">{{ det.prenda.titulo_publicacion }}</strong>
+                            <small class="text-muted d-block">{{ det.prenda.categoria.nombre_categoria }} &bull; Talla {{ det.prenda.talla }} &bull; {{ det.prenda.material.nombre_material }}</small>
+                            <span class="badge bg-light text-dark border small mt-1">Estado: {{ det.prenda.estado_aspecto.nombre_estado }}</span>
+                        </div>
+                        <div class="text-end flex-shrink-0 pe-2">
+                            <span class="badge bg-dark text-warning fw-bold fs-6">{{ det.puntos_referencia_momento }} pts</span>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- PANEL 2: ARTÍCULOS SOLICITADOS -->
+    <div class="col-lg-6">
+        <div class="tarjeta-vibrante h-100 p-4" style="border-top: 5px solid #F59E0B !important;">
+            <div class="d-flex justify-content-between align-items-center pb-2 mb-3 border-bottom">
+                <h5 class="fw-bold text-dark mb-0">
+                    <i class="bi bi-box-arrow-in-down text-warning me-1"></i> Artículos Solicitados ({{ oferta.articulos_solicitados|length }})
+                </h5>
+                <span class="badge bg-warning text-dark fw-bold px-3 py-1 rounded-pill">
+                    Total: {{ oferta.puntos_totales_solicitados }} pts
+                </span>
+            </div>
+
+            <div class="row g-3">
+                {% for det in oferta.articulos_solicitados %}
+                <div class="col-12">
+                    <div class="card border rounded-3 p-2 d-flex flex-row align-items-center gap-3 shadow-sm">
+                        <div class="bg-light rounded-2 overflow-hidden flex-shrink-0" style="width: 80px; height: 80px;">
+                            {% if det.prenda.archivo_portada %}
+                            <img src="{{ url_for('static', filename=det.prenda.archivo_portada.ruta_archivo) }}" alt="{{ det.prenda.titulo_publicacion }}" class="w-100 h-100 object-fit-cover" onerror="this.onerror=null; this.src='https://placehold.co/100x100/f59e0b/ffffff?text=Prenda';">
+                            {% else %}
+                            <div class="w-100 h-100 d-flex align-items-center justify-content-center text-muted"><i class="bi bi-image"></i></div>
+                            {% endif %}
+                        </div>
+                        <div class="flex-grow-1 overflow-hidden">
+                            <strong class="d-block text-dark text-truncate">{{ det.prenda.titulo_publicacion }}</strong>
+                            <small class="text-muted d-block">{{ det.prenda.categoria.nombre_categoria }} &bull; Talla {{ det.prenda.talla }} &bull; {{ det.prenda.material.nombre_material }}</small>
+                            <span class="badge bg-light text-dark border small mt-1">Estado: {{ det.prenda.estado_aspecto.nombre_estado }}</span>
+                        </div>
+                        <div class="text-end flex-shrink-0 pe-2">
+                            <span class="badge bg-dark text-warning fw-bold fs-6">{{ det.puntos_referencia_momento }} pts</span>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- =======================================================================
+     BARRA DE ACCIONES CONTEXTUALES SEGÚN ROL Y ESTADO
+     ======================================================================= -->
+<div class="tarjeta-vibrante p-4 mb-5">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-center gap-3">
+        <div>
+            {% if oferta.estado_oferta == 'PENDIENTE' %}
+                {% if es_receptor %}
+                <strong class="text-dark d-block">Tienes una propuesta de trueque pendiente de resolver.</strong>
+                <small class="text-muted">Si aceptas, la titularidad de los artículos se transferirá inmediatamente en SQL Server.</small>
+                {% else %}
+                <strong class="text-dark d-block">Has enviado esta propuesta de trueque.</strong>
+                <small class="text-muted">Tus artículos están reservados. Puedes cancelar la oferta si cambias de parecer antes de que responda.</small>
+                {% endif %}
+            {% elif oferta.estado_oferta == 'ACEPTADA' %}
+                <strong class="text-success d-block fs-5"><i class="bi bi-check-circle-fill me-1"></i> ¡Trueque Aceptado y Transferido!</strong>
+                <small class="text-muted">La sala privada de chat está habilitada para coordinar el método de entrega (presencial o domicilio).</small>
+            {% else %}
+                <strong class="text-muted d-block">Esta propuesta de trueque se encuentra cerrada (Estado: {{ oferta.estado_oferta }}).</strong>
+                <small class="text-muted">Los artículos han sido liberados en los inventarios correspondientes.</small>
+            {% endif %}
+        </div>
+
+        <div class="d-flex gap-2 flex-wrap">
+            {% if oferta.estado_oferta == 'PENDIENTE' and es_receptor %}
+                <!-- Botón Aceptar -->
+                <form method="POST" action="{{ url_for('trueques.aceptar_oferta', id_oferta=oferta.id_oferta_trueque) }}" onsubmit="return confirm('¿Confirmas aceptar este trueque? La transferencia de titularidad de los artículos será inmediata y definitiva.');">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="btn btn-vibrante-esmeralda py-2 px-4 shadow fw-bold">
+                        <i class="bi bi-check-lg me-1"></i> Aceptar Trueque
+                    </button>
+                </form>
+
+                <!-- Botón Contraofertar -->
+                <a href="{{ url_for('trueques.proponer_trueque', id_receptor=oferta.usuario_ofertante.id_usuario, contraoferta_de=oferta.id_oferta_trueque) }}" class="btn btn-outline-primary py-2 px-3 rounded-pill fw-semibold">
+                    <i class="bi bi-arrow-repeat me-1"></i> Contraofertar
+                </a>
+
+                <!-- Botón Rechazar -->
+                <form method="POST" action="{{ url_for('trueques.rechazar_oferta', id_oferta=oferta.id_oferta_trueque) }}" onsubmit="return confirm('¿Deseas rechazar esta oferta? Los artículos de ambos serán liberados.');">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="btn btn-outline-danger py-2 px-3 rounded-pill fw-semibold">
+                        <i class="bi bi-x-lg me-1"></i> Rechazar
+                    </button>
+                </form>
+
+            {% elif oferta.estado_oferta == 'PENDIENTE' and es_ofertante %}
+                <!-- Botón Cancelar (Emisor) -->
+                <form method="POST" action="{{ url_for('trueques.cancelar_oferta', id_oferta=oferta.id_oferta_trueque) }}" onsubmit="return confirm('¿Confirmas cancelar tu propuesta de trueque? Tus prendas volverán a estar activas en tu vitrina.');">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="btn btn-outline-danger py-2 px-4 rounded-pill fw-semibold">
+                        <i class="bi bi-slash-circle me-1"></i> Cancelar Propuesta
+                    </button>
+                </form>
+
+            {% elif oferta.estado_oferta == 'ACEPTADA' %}
+                <!-- Botón de Chat habilitado -->
+                {% if sala_chat %}
+                <a href="{{ url_for('chat.ver_sala', codigo_sala=sala_chat.codigo_sala) }}" class="btn btn-vibrante-turquesa py-2 px-4 shadow fw-bold">
+                    <i class="bi bi-chat-dots-fill me-1"></i> Abrir Sala de Chat (#{{ sala_chat.codigo_sala }})
+                </a>
+                {% endif %}
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

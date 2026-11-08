@@ -1,0 +1,464 @@
+{% extends "base.html" %}
+
+{% block titulo %}Publicar Prenda o Accesorio - ModaCircular{% endblock %}
+
+{% block contenido %}
+<!-- Migas de Pan / Navegación -->
+<nav aria-label="breadcrumb" class="mb-4">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item">
+            <a href="{{ url_for('inicio') }}" class="text-decoration-none text-muted">
+                <i class="bi bi-house-door-fill text-success"></i> Inicio
+            </a>
+        </li>
+        <li class="breadcrumb-item">
+            <a href="{{ url_for('catalogo.explorar') }}" class="text-decoration-none text-muted">Catálogo</a>
+        </li>
+        <li class="breadcrumb-item active text-dark fw-bold" aria-current="page">
+            Publicar Prenda o Accesorio
+        </li>
+    </ol>
+</nav>
+
+<div class="row g-4">
+    <!-- Columna Izquierda: Formulario de Registro con los 7 Atributos Obligatorios -->
+    <div class="col-lg-8">
+        <div class="tarjeta-vibrante p-4 p-md-5 mb-4">
+            <!-- Encabezado con Icono Vibrante -->
+            <div class="d-flex align-items-center mb-4 pb-3 border-bottom">
+                <span class="icono-marca me-3" style="width: 48px; height: 48px; border-radius: 14px;">
+                    <i class="bi bi-plus-circle-fill fs-4"></i>
+                </span>
+                <div>
+                    <h3 class="fw-bold mb-0 text-dark" style="font-family: var(--fuente-titulos); letter-spacing: -0.02em;">
+                        Publicar Prenda o Accesorio
+                    </h3>
+                    <p class="text-muted small mb-0">
+                        Completa los <strong>7 atributos obligatorios</strong> para cotizar tus puntos al instante y sin datos quemados
+                    </p>
+                </div>
+            </div>
+
+            <form method="POST" enctype="multipart/form-data" id="formularioPublicacion" novalidate>
+                {{ formulario.hidden_tag() }}
+
+                <!-- 1. Título y Categoría Taxonómica -->
+                <div class="row g-3 mb-4">
+                    <div class="col-12">
+                        <label class="form-label fw-bold text-dark small">
+                            <i class="bi bi-fonts text-success me-1"></i> Título Descriptivo de la Publicación:
+                        </label>
+                        {{ formulario.titulo_publicacion(class="form-control form-control-lg fs-6" + (" is-invalid" if formulario.titulo_publicacion.errors else ""), placeholder="Ej. Chaqueta Denim Pesado Selvedge Vintage") }}
+                        {% for error in formulario.titulo_publicacion.errors %}
+                            <div class="invalid-feedback d-block">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold text-dark small">
+                            <i class="bi bi-folder2-open text-primary me-1"></i> Categoría Paramétrica:
+                        </label>
+                        {{ formulario.id_categoria(class="form-select" + (" is-invalid" if formulario.id_categoria.errors else ""), id="selectorCategoria") }}
+                        {% for error in formulario.id_categoria.errors %}
+                            <div class="invalid-feedback d-block">{{ error }}</div>
+                        {% endfor %}
+                        <small class="text-muted" style="font-size: 0.78rem;">Filtra automáticamente los materiales permitidos en SQL Server.</small>
+                    </div>
+
+                    <!-- Atributo 1: Material (Filtrado Dinámico en SQL Server) -->
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold text-success small">
+                            <i class="bi bi-layers-fill text-success me-1"></i> 1. Material del Artículo (Catálogo Maestro):
+                        </label>
+                        {{ formulario.id_material(class="form-select border-success" + (" is-invalid" if formulario.id_material.errors else ""), id="selectorMaterial") }}
+                        {% for error in formulario.id_material.errors %}
+                            <div class="invalid-feedback d-block">{{ error }}</div>
+                        {% endfor %}
+                        <small id="indicadorCargaMateriales" class="text-muted d-block" style="font-size: 0.78rem;">
+                            <span class="spinner-border spinner-border-sm text-success d-none" role="status"></span>
+                            <span>Selecciona una categoría para cargar materiales.</span>
+                        </small>
+                    </div>
+                </div>
+
+                <!-- 2. Medida de Largo, Talla y Procedencia -->
+                <div class="row g-3 mb-4">
+                    <!-- Atributo 2: Medida de Largo en cm -->
+                    <div class="col-md-4">
+                        <label class="form-label fw-bold text-dark small">
+                            <i class="bi bi-rulers text-info me-1"></i> 2. Medida de Largo:
+                        </label>
+                        <div class="input-group">
+                            {{ formulario.medida_largo_cm(class="form-control" + (" is-invalid" if formulario.medida_largo_cm.errors else ""), placeholder="Ej. 68.5", step="0.5") }}
+                            <span class="input-group-text bg-light text-muted fw-bold">cm</span>
+                        </div>
+                        {% for error in formulario.medida_largo_cm.errors %}
+                            <div class="invalid-feedback d-block">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+
+                    <!-- Atributo 3: Talla -->
+                    <div class="col-md-4">
+                        <label class="form-label fw-bold text-dark small">
+                            <i class="bi bi-aspect-ratio text-primary me-1"></i> 3. Talla o Calibre:
+                        </label>
+                        {{ formulario.talla(class="form-control" + (" is-invalid" if formulario.talla.errors else ""), placeholder="Ej. M, 38, Única, 42cm") }}
+                        {% for error in formulario.talla.errors %}
+                            <div class="invalid-feedback d-block">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+
+                    <!-- Atributo 4: Procedencia / Marca -->
+                    <div class="col-md-4">
+                        <label class="form-label fw-bold text-dark small">
+                            <i class="bi bi-shop text-warning me-1"></i> 4. Procedencia / Marca:
+                        </label>
+                        {{ formulario.procedencia(class="form-control" + (" is-invalid" if formulario.procedencia.errors else ""), placeholder="Ej. Levi's, Zara, Artesanal") }}
+                        {% for error in formulario.procedencia.errors %}
+                            <div class="invalid-feedback d-block">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- 3. Estado de Aspecto y Nivel de Utilidad -->
+                <div class="row g-3 mb-4">
+                    <!-- Atributo 5: Estado de Aspecto Físico -->
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold text-dark small">
+                            <i class="bi bi-stars text-danger me-1"></i> 5. Aspecto Físico (Conservación):
+                        </label>
+                        {{ formulario.id_estado_aspecto(class="form-select" + (" is-invalid" if formulario.id_estado_aspecto.errors else ""), id="selectorEstadoAspecto") }}
+                        {% for error in formulario.id_estado_aspecto.errors %}
+                            <div class="invalid-feedback d-block">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+
+                    <!-- Atributo 6: Nivel de Utilidad / Demanda -->
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold text-dark small">
+                            <i class="bi bi-lightning-charge-fill text-warning me-1"></i> 6. Nivel de Utilidad:
+                        </label>
+                        {{ formulario.id_nivel_utilidad(class="form-select" + (" is-invalid" if formulario.id_nivel_utilidad.errors else ""), id="selectorNivelUtilidad") }}
+                        {% for error in formulario.id_nivel_utilidad.errors %}
+                            <div class="invalid-feedback d-block">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Atributo 7: Motivo de Cambio -->
+                <div class="mb-4">
+                    <label class="form-label fw-bold text-dark small">
+                        <i class="bi bi-chat-quote-fill text-success me-1"></i> 7. Motivo de Cambio (Declaración Obligatoria):
+                    </label>
+                    {{ formulario.motivo_cambio(class="form-control" + (" is-invalid" if formulario.motivo_cambio.errors else ""), rows=3, placeholder="Explica detalladamente por qué deseas intercambiarlo (ej. cambio de talla, poco uso, renovación circular de armario, apenas usado en una ocasión especial)...") }}
+                    {% for error in formulario.motivo_cambio.errors %}
+                        <div class="invalid-feedback d-block">{{ error }}</div>
+                    {% endfor %}
+                </div>
+
+                <!-- Zona de Carga Multimedia (Fotos y Videos Cortos) -->
+                <div class="mb-4 p-4 rounded-4" style="background: linear-gradient(135deg, #F8FAFC 0%, #F1F5F9 100%); border: 2px dashed #CBD5E1;">
+                    <div class="d-flex align-items-center gap-2 mb-2">
+                        <i class="bi bi-camera-reels-fill text-success fs-5"></i>
+                        <label class="form-label fw-bold text-dark mb-0">
+                            Archivos Multimedia Obligatorios (Fotos y/o Video de Evidencia)
+                        </label>
+                    </div>
+                    <p class="text-muted small mb-3">
+                        Sube fotografías nítidas o un video corto. Para piezas de joyería o metales preciosos, incluye tomas macro de los sellos o contrastes de ley.
+                    </p>
+                    {{ formulario.archivos_multimedia(class="form-control form-control-lg fs-6" + (" is-invalid" if formulario.archivos_multimedia.errors else ""), multiple=True, accept="image/*,video/*") }}
+                    {% for error in formulario.archivos_multimedia.errors %}
+                        <div class="invalid-feedback d-block">{{ error }}</div>
+                    {% endfor %}
+                    <div class="d-flex gap-2 mt-2">
+                        <span class="badge badge-pildora bg-white text-muted border small"><i class="bi bi-file-earmark-image"></i> JPG, PNG, WEBP</span>
+                        <span class="badge badge-pildora bg-white text-muted border small"><i class="bi bi-file-earmark-play"></i> MP4, WEBM</span>
+                    </div>
+                </div>
+
+                <!-- Modalidad de Publicación (v3.0): Sistema Dual -->
+                <div class="mb-4 p-4 rounded-4" style="background: linear-gradient(135deg, #FEFCE8 0%, #FEF3C7 100%); border: 2px solid rgba(245, 158, 11, 0.3);">
+                    <div class="d-flex align-items-center gap-2 mb-2">
+                        <i class="bi bi-shuffle text-warning fs-5"></i>
+                        <label class="form-label fw-bold text-dark mb-0">
+                            Modalidad de Publicación (Sistema Dual)
+                        </label>
+                    </div>
+                    <p class="text-muted small mb-3">
+                        Elige si deseas recibir puntos inmediatamente en tu billetera, guardarlo en tu vitrina para trueques directos artículo por artículo, o ambas opciones.
+                    </p>
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label class="card h-100 p-3 border-2 text-center cursor-pointer shadow-sm" style="border-radius: 16px; cursor: pointer;">
+                                <input type="radio" name="modalidad_publicacion" value="SOLO_PUNTOS" class="form-check-input mx-auto mb-2" {% if formulario.modalidad_publicacion.data == 'SOLO_PUNTOS' or not formulario.modalidad_publicacion.data %}checked{% endif %}>
+                                <i class="bi bi-coin text-warning fs-3 mb-1"></i>
+                                <strong class="d-block text-dark small">Solo Puntos</strong>
+                                <small class="text-muted" style="font-size: 0.75rem;">Acredita puntos de inmediato para canjear en el catálogo.</small>
+                            </label>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="card h-100 p-3 border-2 text-center cursor-pointer shadow-sm" style="border-radius: 16px; cursor: pointer;">
+                                <input type="radio" name="modalidad_publicacion" value="INVENTARIO_TRUEQUE" class="form-check-input mx-auto mb-2" {% if formulario.modalidad_publicacion.data == 'INVENTARIO_TRUEQUE' %}checked{% endif %}>
+                                <i class="bi bi-box-seam-fill text-primary fs-3 mb-1"></i>
+                                <strong class="d-block text-dark small">Inventario Trueque</strong>
+                                <small class="text-muted" style="font-size: 0.75rem;">Vitrina para trueque directo. Sin acreditar puntos; podrás convertirlos después.</small>
+                            </label>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="card h-100 p-3 border-2 text-center cursor-pointer shadow-sm" style="border-radius: 16px; cursor: pointer;">
+                                <input type="radio" name="modalidad_publicacion" value="AMBOS" class="form-check-input mx-auto mb-2" {% if formulario.modalidad_publicacion.data == 'AMBOS' %}checked{% endif %}>
+                                <i class="bi bi-arrow-repeat text-success fs-3 mb-1"></i>
+                                <strong class="d-block text-dark small">Ambos</strong>
+                                <small class="text-muted" style="font-size: 0.75rem;">Acredita puntos y además queda visible para ofertas de trueque.</small>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Botón de Envío -->
+                <div class="d-grid pt-2">
+                    <button type="submit" class="btn btn-vibrante-esmeralda btn-lg justify-content-center py-3 fs-5 shadow">
+                        <i class="bi bi-cloud-arrow-up-fill me-1"></i> Publicar y Recibir Puntos
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Columna Derecha: Tarjeta Simuladora de Puntos en Vivo -->
+    <div class="col-lg-4">
+        <div class="tarjeta-vibrante sticky-top shadow" style="top: 90px;">
+            <!-- Encabezado del Simulador -->
+            <div class="tarjeta-header-gradiente d-flex align-items-center justify-content-between">
+                <div class="d-flex align-items-center gap-2">
+                    <span class="icono-marca" style="width: 32px; height: 32px; border-radius: 8px;">
+                        <i class="bi bi-calculator-fill fs-6"></i>
+                    </span>
+                    <h5 class="fw-bold mb-0 text-dark" style="font-family: var(--fuente-titulos);">
+                        Motor de Puntos
+                    </h5>
+                </div>
+                <span class="badge badge-pildora badge-familia-vegetal">SQL Server 2022</span>
+            </div>
+
+            <div class="p-4">
+                <!-- Contador de Puntos en Vivo -->
+                <div class="p-4 rounded-4 text-center mb-3 shadow-sm" id="contenedorCajaPuntos" style="background: linear-gradient(135deg, #ECFDF5 0%, #D1FAE5 100%); border: 2px solid rgba(16, 185, 129, 0.3);">
+                    <span class="text-success fw-bold small text-uppercase d-block" style="letter-spacing: 0.05em;">
+                        Puntos Estimados a Recibir
+                    </span>
+                    <div id="cajaPuntosEnVivo" class="display-3 fw-bold text-success my-1" style="font-family: var(--fuente-titulos);">
+                        --
+                    </div>
+                    <small id="subtituloEstado" class="text-muted fw-semibold">Selecciona los parámetros para simular</small>
+                </div>
+
+                <!-- Alerta Dinámica de Bifurcación (Acreditación Inmediata vs Retención de Joyería) -->
+                <div id="alertaModalidadPuntos" class="alerta-vibrante alerta-vibrante-info d-flex align-items-start small p-3 mb-3">
+                    <i class="bi bi-info-circle-fill fs-5 me-2 flex-shrink-0 text-info"></i>
+                    <div id="textoModalidadPuntos">
+                        Selecciona una categoría y material para consultar la regla de acreditación.
+                    </div>
+                </div>
+
+                <!-- Desglose de la Fórmula Paramétrica de SQL Server -->
+                <div class="small">
+                    <div class="d-flex align-items-center justify-content-between mb-2">
+                        <h6 class="fw-bold text-dark text-uppercase mb-0" style="font-size: 0.78rem; letter-spacing: 0.04em;">
+                            Desglose de la Fórmula:
+                        </h6>
+                        <span class="badge bg-light text-muted border small">Cero Hardcoding</span>
+                    </div>
+
+                    <ul class="list-group list-group-flush border-top border-bottom mb-3" style="font-size: 0.85rem;">
+                        <li class="list-group-item d-flex justify-content-between px-0 py-1 bg-transparent">
+                            <span class="text-muted">Puntaje Base Categoría:</span>
+                            <strong id="desgloseBase" class="text-dark">--</strong>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between px-0 py-1 bg-transparent">
+                            <span class="text-muted">Multiplicador Material:</span>
+                            <strong id="desgloseMultiplicador" class="text-success">--</strong>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between px-0 py-1 bg-transparent">
+                            <span class="text-muted">Bono Adicional Material:</span>
+                            <strong id="desgloseBonoMat" class="text-info">--</strong>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between px-0 py-1 bg-transparent">
+                            <span class="text-muted">Factor Conservación:</span>
+                            <strong id="desgloseConservacion" class="text-warning">--</strong>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between px-0 py-1 bg-transparent">
+                            <span class="text-muted">Bono Nivel Utilidad:</span>
+                            <strong id="desgloseUtilidad" class="text-primary">--</strong>
+                        </li>
+                    </ul>
+
+                    <div class="p-2 bg-light rounded-3 text-muted font-monospace border" style="font-size: 0.74rem;" id="formulaAuditoriaTexto">
+                        Puntos = ((Base * FactorMat) + BonoMat) * Conservación + BonoUtil
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const selectorCat = document.getElementById('selectorCategoria');
+    const selectorMat = document.getElementById('selectorMaterial');
+    const selectorAsp = document.getElementById('selectorEstadoAspecto');
+    const selectorUti = document.getElementById('selectorNivelUtilidad');
+
+    const contenedorCaja = document.getElementById('contenedorCajaPuntos');
+    const cajaPuntos = document.getElementById('cajaPuntosEnVivo');
+    const subtituloEstado = document.getElementById('subtituloEstado');
+    const alertaModalidad = document.getElementById('alertaModalidadPuntos');
+    const textoModalidad = document.getElementById('textoModalidadPuntos');
+
+    const desgloseBase = document.getElementById('desgloseBase');
+    const desgloseMult = document.getElementById('desgloseMultiplicador');
+    const desgloseBonoMat = document.getElementById('desgloseBonoMat');
+    const desgloseCons = document.getElementById('desgloseConservacion');
+    const desgloseUti = document.getElementById('desgloseUtilidad');
+    const formulaTexto = document.getElementById('formulaAuditoriaTexto');
+
+    // Función 1: Carga y filtrado dinámico de materiales por AJAX
+    async function actualizarMaterialesPorCategoria(idCategoria, materialSeleccionadoPreviamente = null) {
+        if (!idCategoria) return;
+
+        selectorMat.disabled = true;
+        selectorMat.innerHTML = '<option value="">Cargando catálogo de materiales...</option>';
+
+        try {
+            const respuesta = await fetch(`/api/materiales-por-categoria/${idCategoria}`);
+            const datos = await respuesta.json();
+
+            if (datos.exito) {
+                selectorMat.innerHTML = '<option value="">-- Selecciona un material --</option>';
+
+                // Agrupar materiales por familia taxonómica
+                const familias = {};
+                datos.materiales.forEach(mat => {
+                    if (!familias[mat.familia_material]) {
+                        familias[mat.familia_material] = [];
+                    }
+                    familias[mat.familia_material].push(mat);
+                });
+
+                Object.keys(familias).forEach(fam => {
+                    const optgroup = document.createElement('optgroup');
+                    optgroup.label = fam;
+
+                    familias[fam].forEach(mat => {
+                        const opt = document.createElement('option');
+                        opt.value = mat.id_material;
+                        const etiquetaJoya = mat.es_metal_o_joya_preciosa ? ' [JOYA / MODERACIÓN]' : '';
+                        opt.textContent = `${mat.nombre_material} (x${mat.factor_multiplicador.toFixed(2)})${etiquetaJoya}`;
+                        opt.dataset.requiereAprobacion = mat.requiere_aprobacion_especial;
+                        opt.dataset.esJoya = mat.es_metal_o_joya_preciosa;
+
+                        if (materialSeleccionadoPreviamente && String(mat.id_material) === String(materialSeleccionadoPreviamente)) {
+                            opt.selected = true;
+                        }
+
+                        optgroup.appendChild(opt);
+                    });
+                    selectorMat.appendChild(optgroup);
+                });
+
+                selectorMat.disabled = false;
+
+                // Si hay un material seleccionado, disparar simulación de puntos
+                if (selectorMat.value) {
+                    simularCalculoPuntos();
+                }
+            }
+        } catch (error) {
+            console.error("Error al cargar materiales:", error);
+            selectorMat.innerHTML = '<option value="">Error al cargar materiales</option>';
+        }
+    }
+
+    // Función 2: Simulación reactiva en vivo de puntos por AJAX
+    async function simularCalculoPuntos() {
+        const idCat = selectorCat.value;
+        const idMat = selectorMat.value;
+        const idAsp = selectorAsp.value;
+        const idUti = selectorUti.value;
+
+        if (!idCat || !idMat || !idAsp || !idUti) {
+            cajaPuntos.textContent = '--';
+            subtituloEstado.textContent = 'Selecciona todos los atributos para simular';
+            return;
+        }
+
+        try {
+            const respuesta = await fetch('/api/calcular-puntos', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    id_categoria: parseInt(idCat),
+                    id_material: parseInt(idMat),
+                    id_estado_aspecto: parseInt(idAsp),
+                    id_nivel_utilidad: parseInt(idUti)
+                })
+            });
+
+            const datos = await respuesta.json();
+            if (datos.exito) {
+                const c = datos.calculo;
+                cajaPuntos.textContent = c.puntos;
+
+                // Actualizar desglose matemático
+                desgloseBase.textContent = `${c.desglose.categoria.puntaje_base} pts`;
+                desgloseMult.textContent = `x${c.desglose.material.factor_multiplicador.toFixed(2)}`;
+                desgloseBonoMat.textContent = `+${c.desglose.material.bono_puntos_material} pts`;
+                desgloseCons.textContent = `x${c.desglose.estado_aspecto.factor_conservacion.toFixed(2)}`;
+                desgloseUti.textContent = `+${c.desglose.nivel_utilidad.bono_puntos} pts`;
+                formulaTexto.textContent = c.descripcion_auditoria;
+
+                // Bifurcación visual: Acreditación Inmediata vs Aprobación Especial
+                if (c.requiere_aprobacion_especial) {
+                    subtituloEstado.textContent = 'Puntos Retenidos (Joyería Preciosa)';
+                    cajaPuntos.className = 'display-3 fw-bold text-amber my-1';
+                    cajaPuntos.style.color = '#D97706';
+                    contenedorCaja.style.background = 'linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%)';
+                    contenedorCaja.style.border = '2px solid rgba(245, 158, 11, 0.4)';
+                    alertaModalidad.className = 'alerta-vibrante alerta-vibrante-warning d-flex align-items-start small p-3 mb-3';
+                    textoModalidad.innerHTML = `<strong><i class="bi bi-shield-lock-fill me-1"></i> Requiere Aprobación de Joyería:</strong> Por tratarse de un metal o gema preciosa (${c.desglose.material.nombre}), los <strong>${c.puntos} puntos</strong> se sumarán a tu <u>saldo retenido</u>. Un moderador revisará las fotos/video para acreditarlos a tu saldo disponible.`;
+                } else {
+                    subtituloEstado.textContent = 'Acreditación Inmediata';
+                    cajaPuntos.className = 'display-3 fw-bold text-success my-1';
+                    cajaPuntos.style.color = '';
+                    contenedorCaja.style.background = 'linear-gradient(135deg, #ECFDF5 0%, #D1FAE5 100%)';
+                    contenedorCaja.style.border = '2px solid rgba(16, 185, 129, 0.3)';
+                    alertaModalidad.className = 'alerta-vibrante alerta-vibrante-success d-flex align-items-start small p-3 mb-3';
+                    textoModalidad.innerHTML = `<strong><i class="bi bi-check-circle-fill me-1"></i> Acreditación Inmediata:</strong> Al publicar, tus <strong>${c.puntos} puntos</strong> se sumarán inmediatamente a tu <u>saldo disponible</u> para intercambiar cualquier artículo.`;
+                }
+            }
+        } catch (error) {
+            console.error("Error al simular puntos:", error);
+        }
+    }
+
+    // Eventos interactivos
+    selectorCat.addEventListener('change', function() {
+        actualizarMaterialesPorCategoria(this.value);
+    });
+
+    selectorMat.addEventListener('change', simularCalculoPuntos);
+    selectorAsp.addEventListener('change', simularCalculoPuntos);
+    selectorUti.addEventListener('change', simularCalculoPuntos);
+
+    // Inicializar materiales si ya hay una categoría seleccionada (ej. tras error de validación)
+    if (selectorCat.value) {
+        actualizarMaterialesPorCategoria(selectorCat.value, "{{ formulario.id_material.data or '' }}");
+    }
+});
+</script>
+{% endblock %}

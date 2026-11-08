@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block titulo %}ModaCircular - Intercambio Sostenible de Ropa y Accesorios{% endblock %}</title>
+
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <!-- Google Fonts: Plus Jakarta Sans & Nunito (Tipografía moderna, abierta y amigable) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Estilos Eco-Fashion Vibrantes (+30% Más Colorido & Tipografía Nunito/Plus Jakarta) -->
+    <link href="{{ url_for('static', filename='css/estilos_vibrantes.css') }}" rel="stylesheet">
+
+    {% block estilos %}{% endblock %}
+</head>
+<body>
+    <!-- Barra Superior de Navegación Glassmorphism con Billetera Dual en Tiempo Real -->
+    <nav class="navbar navbar-expand-lg navbar-vibrante sticky-top">
+        <div class="container">
+            <a class="navbar-brand marca-logo" href="{{ url_for('inicio') }}">
+                <span class="icono-marca">
+                    <i class="bi bi-recycle fs-5"></i>
+                </span>
+                <span>ModaCircular</span>
+            </a>
+            
+            <button class="navbar-toggler border-0 shadow-none" type="button" data-bs-toggle="collapse" data-bs-target="#menuPrincipal" aria-controls="menuPrincipal" aria-expanded="false" aria-label="Navegación">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <div class="collapse navbar-collapse" id="menuPrincipal">
+                <!-- Enlaces Principales -->
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0 align-items-lg-center">
+                    <li class="nav-item">
+                        <a class="nav-link nav-link-vibrante" href="{{ url_for('catalogo.explorar') }}">
+                            <i class="bi bi-grid-fill text-primary"></i> Explorar Catálogo
+                        </a>
+                    </li>
+                    {% if current_user.is_authenticated %}
+                    <li class="nav-item">
+                        <a class="nav-link nav-link-vibrante text-success" href="{{ url_for('prendas.publicar') }}">
+                            <i class="bi bi-plus-circle-fill text-success"></i> Publicar Prenda
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link nav-link-vibrante text-info" href="{{ url_for('inventario.ver_vitrina', id_usuario=current_user.id_usuario) }}">
+                            <i class="bi bi-box-seam-fill text-info"></i> Mi Vitrina Trueque
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link nav-link-vibrante text-warning" href="{{ url_for('trueques.mis_ofertas') }}">
+                            <i class="bi bi-arrow-left-right text-warning"></i> Trueques Directos
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link nav-link-vibrante text-primary" href="{{ url_for('chat.mis_chats') }}">
+                            <i class="bi bi-chat-dots-fill text-primary"></i> Mis Chats
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link nav-link-vibrante" href="{{ url_for('catalogo.mis_intercambios') }}">
+                            <i class="bi bi-bag-check text-secondary"></i> Canjes Puntos
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link nav-link-vibrante" href="{{ url_for('kardex.movimientos') }}">
+                            <i class="bi bi-receipt text-warning"></i> Mi Kardex
+                        </a>
+                    </li>
+
+                    <!-- Menú Desplegable de Administración Exclusivo para Rol ADMIN -->
+                    {% if current_user.es_administrador %}
+                    <li class="nav-item dropdown">
+                        <a class="nav-link nav-link-vibrante dropdown-toggle fw-bold text-primary" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-gear-fill text-primary"></i> Panel Admin
+                        </a>
+                        <ul class="dropdown-menu shadow border-0" style="border-radius: 16px;">
+                            <li class="dropdown-header text-uppercase small fw-bold text-muted">Configuración Paramétrica</li>
+                            <li>
+                                <a class="dropdown-item py-2" href="{{ url_for('admin.tablas') }}">
+                                    <i class="bi bi-sliders text-success me-2"></i> Tablas Paramétricas (CRUD)
+                                </a>
+                            </li>
+                            <li class="dropdown-header text-uppercase small fw-bold text-muted mt-2">Cuentas y Seguridad</li>
+                            <li>
+                                <a class="dropdown-item py-2" href="{{ url_for('admin_usuarios.listar_usuarios') }}">
+                                    <i class="bi bi-people-fill text-info me-2"></i> Gestión de Usuarios & Suspensiones
+                                </a>
+                            </li>
+                            <li class="dropdown-header text-uppercase small fw-bold text-muted mt-2">Moderación y Joyería</li>
+                            <li>
+                                <a class="dropdown-item py-2" href="{{ url_for('moderacion.bandeja') }}">
+                                    <i class="bi bi-gem text-purple me-2" style="color: var(--color-violeta);"></i> Moderación de Joyas Preciosas
+                                </a>
+                            </li>
+                            <li class="dropdown-header text-uppercase small fw-bold text-muted mt-2">Antifraude y Auditoría</li>
+                            <li>
+                                <a class="dropdown-item py-2" href="{{ url_for('auditoria.listar_disputas') }}">
+                                    <i class="bi bi-shield-shaded text-danger me-2"></i> Bandeja de Disputas & Fraude
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+                    {% elif current_user.es_moderador %}
+                    <li class="nav-item">
+                        <a class="nav-link nav-link-vibrante fw-bold text-purple" style="color: var(--color-violeta);" href="{{ url_for('moderacion.bandeja') }}">
+                            <i class="bi bi-shield-check me-1"></i> Moderación de Joyas
+                        </a>
+                    </li>
+                    {% endif %}
+                    {% endif %}
+                </ul>
+
+                <!-- Sección de Usuario y Billetera en Tiempo Real -->
+                <ul class="navbar-nav align-items-lg-center">
+                    {% if current_user.is_authenticated %}
+                        <!-- Doble Billetera de Puntos con Píldoras Vibrantes -->
+                        <li class="nav-item me-2 my-1 my-lg-0">
+                            <span class="billetera-pildora-disponible" title="Puntos disponibles para canjear en el catálogo">
+                                <i class="bi bi-wallet2 fs-6"></i>
+                                <span>Disponibles: <strong>{{ current_user.saldo_puntos_disponibles }}</strong> pts</span>
+                            </span>
+                        </li>
+                        <li class="nav-item me-3 my-1 my-lg-0">
+                            <span class="billetera-pildora-retenida" title="Puntos retenidos en validación de metales y gemas preciosas">
+                                <i class="bi bi-hourglass-split fs-6"></i>
+                                <span>Retenidos: <strong>{{ current_user.saldo_puntos_retenidos }}</strong> pts</span>
+                            </span>
+                        </li>
+
+                        <!-- Menú de Usuario -->
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle fw-bold text-dark d-flex align-items-center" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <span class="badge rounded-circle bg-light text-dark p-2 me-2 border">
+                                    <i class="bi bi-person-fill text-primary"></i>
+                                </span>
+                                <span>{{ current_user.nombre_completo.split()[0] }}</span>
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end shadow border-0" style="border-radius: 16px;">
+                                <li>
+                                    <div class="px-3 py-2 text-muted small border-bottom">
+                                        <strong class="text-dark">{{ current_user.nombre_completo }}</strong><br>
+                                        <span class="text-muted">{{ current_user.correo_electronico }}</span><br>
+                                        <span class="badge badge-pildora mt-1 {% if current_user.es_administrador %}bg-primary text-white{% elif current_user.es_moderador %}bg-warning text-dark{% else %}bg-light text-dark border{% endif %}">
+                                            {{ current_user.rol.nombre_rol if current_user.rol else 'Usuario' }}
+                                        </span>
+                                    </div>
+                                </li>
+                                <li><a class="dropdown-item py-2" href="{{ url_for('autenticacion.mi_perfil') }}"><i class="bi bi-person-circle text-primary me-2"></i> Mi Perfil</a></li>
+                                <li><a class="dropdown-item py-2" href="{{ url_for('inventario.ver_vitrina', id_usuario=current_user.id_usuario) }}"><i class="bi bi-box-seam-fill text-info me-2"></i> Mi Vitrina de Trueque</a></li>
+                                <li><a class="dropdown-item py-2" href="{{ url_for('trueques.mis_ofertas') }}"><i class="bi bi-arrow-left-right text-warning me-2"></i> Mis Trueques Directos</a></li>
+                                <li><a class="dropdown-item py-2" href="{{ url_for('chat.mis_chats') }}"><i class="bi bi-chat-dots-fill text-primary me-2"></i> Mis Salas de Chat</a></li>
+                                <li><a class="dropdown-item py-2" href="{{ url_for('catalogo.mis_intercambios') }}"><i class="bi bi-bag-check text-success me-2"></i> Mis Canjes con Puntos</a></li>
+                                <li><a class="dropdown-item py-2" href="{{ url_for('kardex.movimientos') }}"><i class="bi bi-receipt-cutoff text-warning me-2"></i> Movimientos (Kardex)</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item py-2 text-danger fw-semibold" href="{{ url_for('autenticacion.cerrar_sesion') }}"><i class="bi bi-box-arrow-right me-2"></i> Cerrar Sesión</a></li>
+                            </ul>
+                        </li>
+                    {% else %}
+                        <li class="nav-item me-2">
+                            <a class="btn btn-outline-success fw-bold px-3" style="border-radius: 12px;" href="{{ url_for('autenticacion.iniciar_sesion') }}">
+                                <i class="bi bi-box-arrow-in-right me-1"></i> Iniciar Sesión
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="btn btn-vibrante-esmeralda" href="{{ url_for('autenticacion.registro') }}">
+                                <i class="bi bi-person-plus-fill me-1"></i> Crear Cuenta
+                            </a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Contenedor de Alertas Flash con Estilo Vibrante -->
+    <div class="container mt-4">
+        {% with mensajes = get_flashed_messages(with_categories=true) %}
+            {% if mensajes %}
+                {% for categoria, mensaje in mensajes %}
+                    <div class="alerta-vibrante alerta-vibrante-{{ categoria }} alert-dismissible fade show" role="alert">
+                        {% if categoria == 'success' %}
+                            <i class="bi bi-check-circle-fill fs-5 text-success"></i>
+                        {% elif categoria == 'danger' %}
+                            <i class="bi bi-exclamation-octagon-fill fs-5 text-danger"></i>
+                        {% elif categoria == 'warning' %}
+                            <i class="bi bi-exclamation-triangle-fill fs-5 text-warning"></i>
+                        {% else %}
+                            <i class="bi bi-info-circle-fill fs-5 text-info"></i>
+                        {% endif %}
+                        <div class="flex-grow-1">{{ mensaje }}</div>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+    </div>
+
+    <!-- Contenido Principal -->
+    <main class="container my-4 flex-grow-1">
+        {% block contenido %}{% endblock %}
+    </main>
+
+    <!-- Pie de Página Eco-Fashion Vibrante -->
+    <footer class="pie-pagina-vibrante">
+        <div class="container text-center">
+            <div class="d-flex justify-content-center align-items-center gap-2 mb-2">
+                <span class="icono-marca" style="width: 28px; height: 28px; border-radius: 8px;">
+                    <i class="bi bi-recycle" style="font-size: 0.9rem;"></i>
+                </span>
+                <span class="fw-bold" style="font-family: var(--fuente-titulos); font-size: 1.15rem; color: #0F172A;">ModaCircular</span>
+            </div>
+            <p class="mb-1 text-muted small fw-medium">
+                Plataforma Sostenible de Intercambio de Ropa y Accesorios Basada en Puntos Dinámicos &bull; Cero Hardcoding
+            </p>
+            <div class="d-flex justify-content-center gap-2 mt-2">
+                <span class="badge badge-pildora badge-familia-vegetal"><i class="bi bi-leaf"></i> Moda Circular</span>
+                <span class="badge badge-pildora badge-familia-accesorio"><i class="bi bi-database-check"></i> Microsoft SQL Server 2022</span>
+                <span class="badge badge-pildora badge-familia-joya"><i class="bi bi-shield-check"></i> Transacciones ACID</span>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Bootstrap 5 JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

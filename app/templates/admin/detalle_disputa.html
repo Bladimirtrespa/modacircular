@@ -1,0 +1,247 @@
+{% extends "base.html" %}
+
+{% block titulo %}Auditoría Forense Disputa #{{ reporte.id_reporte }} - ModaCircular{% endblock %}
+
+{% block contenido %}
+<div class="mb-4">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3">
+        <div>
+            <div class="d-flex align-items-center gap-2 mb-1 flex-wrap">
+                <span class="badge bg-danger text-white font-monospace px-3 py-1">EXPEDIENTE #REP-{{ reporte.id_reporte }}</span>
+                <span class="badge bg-dark font-monospace text-light px-3 py-1">SALA #{{ sala.codigo_sala }}</span>
+                {% if reporte.estado_reporte == 'PENDIENTE_REVISION' %}
+                <span class="badge bg-warning text-dark fw-bold rounded-pill px-3">PENDIENTE DE REVISIÓN</span>
+                {% elif reporte.estado_reporte == 'EN_INVESTIGACION' %}
+                <span class="badge bg-info text-white fw-bold rounded-pill px-3">EN INVESTIGACIÓN FORENSE</span>
+                {% elif reporte.estado_reporte == 'RESUELTO_CON_SANCION' %}
+                <span class="badge bg-danger text-white fw-bold rounded-pill px-3"><i class="bi bi-shield-slash-fill me-1"></i> RESUELTO CON SANCIÓN</span>
+                {% elif reporte.estado_reporte == 'DESESTIMADO' %}
+                <span class="badge bg-success text-white fw-bold rounded-pill px-3"><i class="bi bi-check-circle-fill me-1"></i> DESESTIMADO</span>
+                {% endif %}
+            </div>
+            <h2 class="fw-bold text-dark mb-0" style="font-family: var(--fuente-titulos);">
+                Inspección Pericial de Controversia
+            </h2>
+            <small class="text-muted">Fecha de radicación: {{ reporte.fecha_reporte.strftime('%d/%m/%Y %H:%M') }}</small>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{{ url_for('auditoria.listar_disputas') }}" class="btn btn-outline-secondary btn-sm rounded-pill">
+                <i class="bi bi-arrow-left me-1"></i> Volver a Disputas
+            </a>
+            <a href="{{ url_for('chat.ver_sala', codigo_sala=sala.codigo_sala) }}" class="btn btn-outline-primary btn-sm rounded-pill" target="_blank">
+                <i class="bi bi-box-arrow-up-right me-1"></i> Ver Sala Directa
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mb-5">
+    <!-- =======================================================================
+         COLUMNA IZQUIERDA: EXPEDIENTE, EVIDENCIAS E HISTORIAL DE CHAT CONGELADO
+         ======================================================================= -->
+    <div class="col-lg-7">
+        <!-- 1. Ficha del Reporte y Partes Involucradas -->
+        <div class="tarjeta-vibrante p-4 mb-4 border-start border-4 border-danger">
+            <h5 class="fw-bold text-dark mb-3">
+                <i class="bi bi-file-earmark-text-fill text-danger me-2"></i> Datos de la Denuncia y Hechos
+            </h5>
+
+            <div class="row g-3 mb-3">
+                <div class="col-md-6">
+                    <div class="p-3 rounded-3 bg-light border">
+                        <span class="small text-muted d-block fw-bold text-uppercase">Denunciante (Afectado)</span>
+                        <strong class="text-dark d-block">{{ reporte.denunciante.nombre_completo }}</strong>
+                        <span class="text-muted small d-block">{{ reporte.denunciante.correo_electronico }}</span>
+                        <span class="small text-success fw-semibold">Reputación: {{ reporte.denunciante.reputacion_trueques }} pts</span>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="p-3 rounded-3 bg-danger-subtle border border-danger-subtle">
+                        <span class="small text-danger d-block fw-bold text-uppercase">Denunciado (Acusado)</span>
+                        <strong class="text-danger d-block">{{ reporte.denunciado.nombre_completo }}</strong>
+                        <span class="text-muted small d-block">{{ reporte.denunciado.correo_electronico }}</span>
+                        <span class="small text-danger fw-semibold">
+                            Reputación: {{ reporte.denunciado.reputacion_trueques }} pts
+                            {% if reporte.denunciado.esta_suspendido %}
+                            <span class="badge bg-danger text-white ms-1">Suspendido</span>
+                            {% endif %}
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <span class="small text-muted d-block fw-semibold">Causal Formal Imputada:</span>
+                <span class="badge bg-danger text-white px-3 py-1 fs-6 rounded-pill mt-1">
+                    {{ reporte.categoria_reporte|replace('_', ' ') }}
+                </span>
+            </div>
+
+            <div class="mb-3">
+                <span class="small text-muted d-block fw-semibold">Descripción Detallada de los Hechos:</span>
+                <div class="p-3 bg-light rounded-3 border mt-1 font-monospace small" style="white-space: pre-wrap; color: #1E293B;">{{ reporte.descripcion_hechos }}</div>
+            </div>
+
+            {% if reporte.ruta_evidencia_reporte %}
+            <div class="mb-2">
+                <span class="small text-muted d-block fw-semibold mb-2">Comprobante de Evidencia Adjunto:</span>
+                <div class="p-2 bg-light rounded-3 border d-inline-block">
+                    <a href="{{ url_for('static', filename=reporte.ruta_evidencia_reporte) }}" target="_blank" class="text-decoration-none">
+                        <img src="{{ url_for('static', filename=reporte.ruta_evidencia_reporte) }}" alt="Evidencia de Fraude" class="img-fluid rounded" style="max-height: 220px;">
+                        <span class="d-block small text-primary fw-bold mt-1 text-center">
+                            <i class="bi bi-box-arrow-up-right me-1"></i> Abrir en Tamaño Completo
+                        </span>
+                    </a>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- 2. Stream Inmutable del Chat Pericial -->
+        <div class="tarjeta-vibrante d-flex flex-column" style="height: 520px;">
+            <div class="p-3 border-bottom d-flex align-items-center justify-content-between bg-light rounded-top-4">
+                <strong class="text-dark small">
+                    <i class="bi bi-chat-left-quote-fill text-info me-2"></i> Historial Completo del Chat (Inalterable)
+                </strong>
+                <span class="badge bg-secondary rounded-pill">{{ mensajes|length }} mensajes registrados</span>
+            </div>
+            <div class="flex-grow-1 p-3 overflow-y-auto d-flex flex-column gap-3" style="background: #F8FAFC;">
+                {% for m in mensajes %}
+                    {% if m.es_mensaje_sistema %}
+                        <div class="text-center my-1">
+                            <span class="badge bg-warning-subtle text-dark border border-warning-subtle px-3 py-2 rounded-pill small" style="max-width: 90%; white-space: normal; line-height: 1.4;">
+                                <i class="bi bi-shield-lock-fill text-danger me-1"></i> {{ m.contenido_mensaje }}
+                                <small class="text-muted d-block mt-1" style="font-size: 0.68rem;">{{ m.fecha_envio.strftime('%d/%m/%Y %H:%M') }}</small>
+                            </span>
+                        </div>
+                    {% else %}
+                        <div class="d-flex flex-column {% if m.id_usuario_emisor == reporte.id_usuario_denunciante %}align-items-start{% else %}align-items-end{% endif %}">
+                            <div class="p-3 rounded-4 shadow-sm border" style="max-width: 82%; background: {% if m.id_usuario_emisor == reporte.id_usuario_denunciante %}#FFFFFF{% else %}#FEF2F2{% endif %};">
+                                <strong class="d-block small {% if m.id_usuario_emisor == reporte.id_usuario_denunciante %}text-success{% else %}text-danger{% endif %} mb-1">
+                                    {{ m.emisor.nombre_completo }} ({% if m.id_usuario_emisor == reporte.id_usuario_denunciante %}Denunciante{% else %}Denunciado{% endif %}):
+                                </strong>
+                                <p class="mb-0 small text-dark">{{ m.contenido_mensaje }}</p>
+                                {% if m.ruta_adjunto %}
+                                <div class="mt-2 rounded-3 overflow-hidden border">
+                                    <a href="{{ url_for('static', filename=m.ruta_adjunto) }}" target="_blank">
+                                        <img src="{{ url_for('static', filename=m.ruta_adjunto) }}" alt="Adjunto" class="img-fluid rounded" style="max-height: 150px;">
+                                    </a>
+                                </div>
+                                {% endif %}
+                            </div>
+                            <span class="text-muted small mt-1 px-1" style="font-size: 0.68rem;">{{ m.fecha_envio.strftime('%d/%m/%Y %H:%M') }}</span>
+                        </div>
+                    {% endif %}
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- =======================================================================
+         COLUMNA DERECHA: CONSOLA DE DICTAMEN PERICIAL Y SANCIONES
+         ======================================================================= -->
+    <div class="col-lg-5">
+        <!-- Tarjeta de Ficha de Envío Acordada -->
+        <div class="tarjeta-vibrante p-4 mb-4 border-top border-4 border-info">
+            <h6 class="fw-bold text-dark mb-2">
+                <i class="bi bi-truck text-info me-2"></i> Ficha Logística Registrada en Sala
+            </h6>
+            <div class="small">
+                <p class="mb-1"><strong>Método:</strong> {{ sala.metodo_entrega }}</p>
+                <p class="mb-1"><strong>Transportadora:</strong> {{ sala.empresa_transportadora or 'No registrada' }}</p>
+                <p class="mb-1"><strong>Guía Rastreo:</strong> <span class="font-monospace text-primary fw-bold">{{ sala.numero_guia_rastreo or 'Sin guía' }}</span></p>
+                <p class="mb-1"><strong>Destino:</strong> {{ sala.direccion_envio or 'Sin dirección' }} - {{ sala.ciudad_destino or '' }}</p>
+                <p class="mb-0"><strong>Receptor:</strong> {{ sala.nombre_receptor_envio or 'Sin nombre' }} ({{ sala.telefono_contacto_envio or '' }})</p>
+            </div>
+        </div>
+
+        <!-- Consola de Dictamen Formal del Administrador -->
+        <div class="tarjeta-vibrante p-4">
+            <h5 class="fw-bold text-dark mb-2">
+                <i class="bi bi-hammer text-danger me-2"></i> Consola de Dictamen y Sanción
+            </h5>
+            <p class="text-muted small mb-3">
+                Como Administrador, evalúa las pruebas del chat y el comprobante adjunto para emitir una resolución vinculante.
+            </p>
+
+            {% if reporte.estado_reporte in ('RESUELTO_CON_SANCION', 'DESESTIMADO') %}
+            <!-- Dictamen Ya Emitido (Solo Lectura) -->
+            <div class="alert {% if reporte.estado_reporte == 'RESUELTO_CON_SANCION' %}alert-danger{% else %}alert-success{% endif %} rounded-3 p-3">
+                <h6 class="fw-bold mb-1">
+                    <i class="bi bi-check-circle-fill me-1"></i> Dictamen Pericial Emitido
+                </h6>
+                <p class="small mb-1"><strong>Acción Aplicada:</strong> <span class="badge bg-dark">{{ reporte.accion_aplicada }}</span></p>
+                <p class="small mb-1"><strong>Resolución:</strong> {{ reporte.dictamen_administrador }}</p>
+                <small class="text-muted d-block mt-2" style="font-size: 0.72rem;">
+                    Revisor: {{ reporte.admin_revisor.nombre_completo if reporte.admin_revisor else 'Administrador' }} |
+                    Fecha: {{ reporte.fecha_resolucion.strftime('%d/%m/%Y %H:%M') if reporte.fecha_resolucion else 'N/A' }}
+                </small>
+            </div>
+            {% else %}
+            <!-- Formulario de Resolución Activo -->
+            <form method="POST" action="{{ url_for('auditoria.resolver_disputa', id_reporte=reporte.id_reporte) }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                <div class="mb-3">
+                    <label class="form-label fw-semibold small">Medida Disciplinaria a Aplicar</label>
+                    <select name="accion_resolucion" class="form-select" id="selectAccion" required onchange="actualizarCamposResolucion(this.value)">
+                        <option value="">-- Selecciona una acción --</option>
+                        <option value="DESESTIMAR">1. Desestimar Reporte (Falsa Alarma o Aclarado - Reactivar Sala)</option>
+                        <option value="SANCION_ADVERTENCIA">2. Advertencia Formal (-20 pts Reputación al denunciado)</option>
+                        <option value="SANCION_SUSPENSION_TEMPORAL">3. Suspensión Temporal de Cuenta (-40 pts Reputación + Cancelar Sala)</option>
+                        <option value="SANCION_EXPULSION_PERMANENTE">4. Expulsión Definitiva (Bloqueo total + Cancelar Sala)</option>
+                    </select>
+                </div>
+
+                <div class="mb-3 d-none" id="bloqueDiasSuspension">
+                    <label class="form-label fw-semibold small">Días de Suspensión Temporal</label>
+                    <select name="dias_suspension" class="form-select">
+                        <option value="3">3 días de bloqueo</option>
+                        <option value="7" selected>7 días de bloqueo (1 semana)</option>
+                        <option value="15">15 días de bloqueo</option>
+                        <option value="30">30 días de bloqueo (1 mes)</option>
+                    </select>
+                </div>
+
+                {% if sala.id_transaccion_adquisicion %}
+                <div class="mb-3 p-3 bg-light rounded-3 border">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" name="revertir_puntos" id="checkRevertir" value="1">
+                        <label class="form-check-label fw-semibold small text-dark" for="checkRevertir">
+                            <i class="bi bi-arrow-repeat text-danger me-1"></i> Revertir Puntos Dinámicos al Comprador
+                        </label>
+                    </div>
+                    <small class="text-muted d-block mt-1 ps-4" style="font-size: 0.75rem;">
+                        Reembolsa {{ sala.transaccion_adquisicion.puntos_canjeados }} pts al comprador y los debita al denunciado bajo el concepto contable <strong>'REVERSION_POR_DISPUTA'</strong>.
+                    </small>
+                </div>
+                {% endif %}
+
+                <div class="mb-3">
+                    <label class="form-label fw-semibold small">Fundamentación y Dictamen del Administrador</label>
+                    <textarea name="dictamen_administrador" class="form-control" rows="4" placeholder="Escribe la motivación pericial, hallazgos de evidencia y justificación del fallo..." required minlength="10" maxlength="1000"></textarea>
+                    <small class="text-muted" style="font-size: 0.72rem;">Este dictamen se registrará como mensaje oficial inmutable en la sala.</small>
+                </div>
+
+                <button type="submit" class="btn btn-danger rounded-pill w-100 fw-bold py-2 shadow-sm">
+                    <i class="bi bi-gavel me-1"></i> Firmar y Ejecutar Dictamen
+                </button>
+            </form>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+function actualizarCamposResolucion(valor) {
+    const bloqueDias = document.getElementById('bloqueDiasSuspension');
+    if (bloqueDias) {
+        if (valor === 'SANCION_SUSPENSION_TEMPORAL') {
+            bloqueDias.classList.remove('d-none');
+        } else {
+            bloqueDias.classList.add('d-none');
+        }
+    }
+}
+</script>
+{% endblock %}

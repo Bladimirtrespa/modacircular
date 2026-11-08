@@ -1,0 +1,168 @@
+{% extends "base.html" %}
+
+{% block titulo %}Mi Perfil y Billetera - ModaCircular{% endblock %}
+
+{% block contenido %}
+<!-- Migas de Pan / Navegación Superior -->
+<nav aria-label="breadcrumb" class="mb-4">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item">
+            <a href="{{ url_for('inicio') }}" class="text-decoration-none text-muted">
+                <i class="bi bi-house-door-fill text-success"></i> Inicio
+            </a>
+        </li>
+        <li class="breadcrumb-item active text-dark fw-bold" aria-current="page">
+            Mi Perfil y Billetera
+        </li>
+    </ol>
+</nav>
+
+<div class="row g-4">
+    <!-- Columna Izquierda: Tarjeta de Presentación y Credenciales del Usuario -->
+    <div class="col-lg-4">
+        <div class="tarjeta-vibrante p-4 text-center">
+            <!-- Avatar Inicial con Gradiente Vibrante -->
+            <div class="d-inline-flex align-items-center justify-content-center mx-auto mb-3 text-white shadow" style="width: 86px; height: 86px; border-radius: 26px; background: linear-gradient(135deg, #10B981, #06B6D4); font-size: 2.2rem; font-family: var(--fuente-titulos); font-weight: 800;">
+                {{ usuario.nombre_completo[0].upper() }}
+            </div>
+            
+            <h4 class="fw-bold mb-1 text-dark" style="font-family: var(--fuente-titulos);">
+                {{ usuario.nombre_completo }}
+            </h4>
+            <p class="text-muted small mb-2">{{ usuario.correo_electronico }}</p>
+
+            <!-- Badge de Rol y Estado -->
+            <div class="d-flex justify-content-center gap-2 mb-3">
+                <span class="badge badge-pildora {% if usuario.es_administrador %}badge-cuenta-temporal bg-primary text-white border-0{% elif usuario.es_moderador %}badge-cuenta-temporal{% else %}badge-familia-vegetal{% endif %}">
+                    <i class="bi bi-shield-check"></i> Rol: {{ usuario.rol.nombre_rol if usuario.rol else 'Usuario' }}
+                </span>
+                {% if usuario.esta_suspendido %}
+                    <span class="badge badge-pildora badge-cuenta-permanente">
+                        <i class="bi bi-exclamation-octagon-fill"></i> Suspendido
+                    </span>
+                {% else %}
+                    <span class="badge badge-pildora badge-cuenta-activa">
+                        <i class="bi bi-check-circle-fill"></i> Cuenta Activa
+                    </span>
+                {% endif %}
+            </div>
+
+            <hr class="my-3">
+
+            <!-- Ficha Rápida de Datos Personales -->
+            <div class="text-start small text-muted" style="font-size: 0.88rem;">
+                <div class="d-flex align-items-center mb-2">
+                    <i class="bi bi-geo-alt-fill text-danger me-2 fs-6"></i>
+                    <span><strong>Ciudad:</strong> {{ usuario.ciudad_ubicacion }}</span>
+                </div>
+                <div class="d-flex align-items-center mb-2">
+                    <i class="bi bi-telephone-fill text-primary me-2 fs-6"></i>
+                    <span><strong>Teléfono:</strong> {{ usuario.telefono or 'No registrado' }}</span>
+                </div>
+                <div class="d-flex align-items-center">
+                    <i class="bi bi-calendar-check-fill text-success me-2 fs-6"></i>
+                    <span><strong>Miembro desde:</strong> {{ usuario.fecha_registro.strftime('%d/%m/%Y') }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Columna Derecha: Billetera Dual de Puntos y Resumen de Actividad -->
+    <div class="col-lg-8">
+        <!-- Bloque de Doble Billetera de Puntos con Estilo Vibrante -->
+        <div class="row g-3 mb-4">
+            <!-- Saldo de Puntos Disponibles -->
+            <div class="col-md-6">
+                <div class="tarjeta-vibrante p-4 h-100 d-flex flex-column" style="background: linear-gradient(135deg, #ECFDF5 0%, #D1FAE5 100%); border: 2px solid rgba(16, 185, 129, 0.35);">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="text-success fw-bold small text-uppercase" style="letter-spacing: 0.04em;">
+                            Saldo Disponible
+                        </span>
+                        <div class="bg-white text-success p-2 rounded-circle shadow-sm">
+                            <i class="bi bi-wallet2 fs-4"></i>
+                        </div>
+                    </div>
+                    <div class="display-5 fw-bold text-success mb-2" style="font-family: var(--fuente-titulos);">
+                        {{ usuario.saldo_puntos_disponibles }} <span class="fs-5 fw-semibold">pts</span>
+                    </div>
+                    <p class="text-muted small mb-3 flex-grow-1">
+                        Puntos acreditados listos para adquirir prendas y accesorios sostenibles en el catálogo público.
+                    </p>
+                    <a href="{{ url_for('catalogo.explorar') }}" class="btn btn-vibrante-esmeralda btn-sm justify-content-center mt-auto">
+                        <i class="bi bi-bag-check-fill"></i> Explorar y Canjear Artículos
+                    </a>
+                </div>
+            </div>
+
+            <!-- Saldo de Puntos Retenidos -->
+            <div class="col-md-6">
+                <div class="tarjeta-vibrante p-4 h-100 d-flex flex-column" style="background: linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%); border: 2px solid rgba(245, 158, 11, 0.35);">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="small text-uppercase fw-bold" style="color: #92400E; letter-spacing: 0.04em;">
+                            Saldo Retenido Preventivo
+                        </span>
+                        <div class="bg-white text-warning p-2 rounded-circle shadow-sm">
+                            <i class="bi bi-hourglass-split fs-4" style="color: #D97706;"></i>
+                        </div>
+                    </div>
+                    <div class="display-5 fw-bold mb-2" style="font-family: var(--fuente-titulos); color: #B45309;">
+                        {{ usuario.saldo_puntos_retenidos }} <span class="fs-5 fw-semibold">pts</span>
+                    </div>
+                    <p class="text-muted small mb-3 flex-grow-1">
+                        Puntos en espera de moderación generados al publicar metales o gemas preciosas (Grupo F).
+                    </p>
+                    <span class="badge badge-pildora bg-white text-muted border px-3 py-2 mt-auto d-inline-block text-center">
+                        <i class="bi bi-shield-check text-warning"></i> Se transfieren tras aprobación
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Resumen de Actividad de Prendas -->
+        <div class="tarjeta-vibrante p-4">
+            <div class="d-flex align-items-center gap-2 mb-3 pb-2 border-bottom">
+                <span class="icono-marca" style="width: 32px; height: 32px; border-radius: 8px;">
+                    <i class="bi bi-graph-up-arrow fs-6"></i>
+                </span>
+                <h5 class="fw-bold mb-0 text-dark" style="font-family: var(--fuente-titulos);">
+                    Mi Actividad Sostenible en la Plataforma
+                </h5>
+            </div>
+
+            <div class="row text-center g-3">
+                <div class="col-4">
+                    <div class="p-3 rounded-4" style="background: #ECFDF5; border: 1px solid rgba(16, 185, 129, 0.2);">
+                        <div class="fs-2 fw-bold text-success" style="font-family: var(--fuente-titulos);">{{ total_publicadas }}</div>
+                        <small class="text-muted fw-bold">Publicadas</small>
+                    </div>
+                </div>
+                <div class="col-4">
+                    <div class="p-3 rounded-4" style="background: #FEF3C7; border: 1px solid rgba(245, 158, 11, 0.2);">
+                        <div class="fs-2 fw-bold" style="font-family: var(--fuente-titulos); color: #D97706;">{{ total_pendientes }}</div>
+                        <small class="text-muted fw-bold">En Moderación</small>
+                    </div>
+                </div>
+                <div class="col-4">
+                    <div class="p-3 rounded-4" style="background: #ECFEFF; border: 1px solid rgba(6, 182, 212, 0.2);">
+                        <div class="fs-2 fw-bold" style="font-family: var(--fuente-titulos); color: #0891B2;">{{ total_intercambiadas }}</div>
+                        <small class="text-muted fw-bold">Intercambiadas</small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Botones de Acción Rápida -->
+            <div class="d-flex flex-wrap gap-2 mt-4 pt-3 border-top">
+                <a href="{{ url_for('prendas.publicar') }}" class="btn btn-vibrante-esmeralda">
+                    <i class="bi bi-plus-circle-fill"></i> Publicar Nueva Prenda o Accesorio
+                </a>
+                <a href="{{ url_for('kardex.movimientos') }}" class="btn btn-outline-secondary py-2" style="border-radius: var(--radio-boton);">
+                    <i class="bi bi-receipt-cutoff me-1 text-warning"></i> Libro Mayor de Puntos (Kardex)
+                </a>
+                <a href="{{ url_for('catalogo.mis_intercambios') }}" class="btn btn-outline-secondary py-2" style="border-radius: var(--radio-boton);">
+                    <i class="bi bi-arrow-left-right me-1 text-info"></i> Mis Intercambios
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,254 @@
+{% extends "base.html" %}
+
+{% block titulo %}{{ prenda.titulo_publicacion }} - Detalle de Artículo - ModaCircular{% endblock %}
+
+{% block contenido %}
+<!-- Migas de Pan / Navegación Superior -->
+<nav aria-label="breadcrumb" class="mb-4">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item">
+            <a href="{{ url_for('inicio') }}" class="text-decoration-none text-muted">
+                <i class="bi bi-house-door-fill text-success"></i> Inicio
+            </a>
+        </li>
+        <li class="breadcrumb-item">
+            <a href="{{ url_for('catalogo.explorar') }}" class="text-decoration-none text-muted">Catálogo</a>
+        </li>
+        <li class="breadcrumb-item active text-dark fw-bold" aria-current="page">
+            {{ prenda.titulo_publicacion }}
+        </li>
+    </ol>
+</nav>
+
+<div class="row g-4">
+    <!-- Columna Izquierda: Galería Multimedia Enriquecida y Motivo de Cambio -->
+    <div class="col-lg-7">
+        <div class="tarjeta-vibrante p-3 mb-4">
+            <!-- Archivo Portada / Reproductor Principal -->
+            {% set portada = prenda.archivo_portada %}
+            <div class="text-center bg-dark rounded-4 mb-3 d-flex align-items-center justify-content-center position-relative overflow-hidden shadow-sm" style="min-height: 440px; max-height: 560px;">
+                {% if portada %}
+                    {% if portada.tipo_archivo == 'VIDEO' %}
+                        <video controls class="w-100 rounded-4" style="max-height: 540px;" id="visorPrincipalVideo">
+                            <source src="{{ url_for('static', filename=portada.ruta_archivo) }}" type="video/mp4">
+                            Tu navegador no soporta reproducción de video HTML5.
+                        </video>
+                    {% else %}
+                        <img src="{{ url_for('static', filename=portada.ruta_archivo) }}" alt="{{ prenda.titulo_publicacion }}" class="img-fluid rounded-4" style="max-height: 540px; width: 100%; object-fit: contain;" id="visorPrincipalImg" onerror="this.onerror=null; this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'600\' height=\'400\' viewBox=\'0 0 600 400\'><rect fill=\'%2310B981\' width=\'600\' height=\'400\'/><text fill=\'%23ffffff\' font-family=\'sans-serif\' font-size=\'22\' font-weight=\'bold\' x=\'50%25\' y=\'50%25\' text-anchor=\'middle\'>ModaCircular - Prenda Sostenible</text></svg>';">
+                    {% endif %}
+                {% else %}
+                    <div class="text-white p-5">
+                        <i class="bi bi-image fs-1 d-block mb-2 text-secondary opacity-50"></i>
+                        <span class="fw-semibold">Sin archivos multimedia asociados</span>
+                    </div>
+                {% endif %}
+
+                <!-- Chip Flotante de Tipo Multimedia -->
+                <span class="position-absolute bottom-0 start-0 m-3 badge badge-pildora bg-dark bg-opacity-75 text-white border border-secondary shadow-sm">
+                    <i class="bi bi-camera-fill me-1"></i> Evidencia Probatoria
+                </span>
+            </div>
+
+            <!-- Miniaturas Si Existen Múltiples Archivos -->
+            {% if prenda.archivos_multimedia.count() > 1 %}
+            <div class="d-flex gap-2 overflow-auto pb-2 px-1">
+                {% for archivo in prenda.archivos_multimedia.all() %}
+                    <div class="border rounded-3 p-1 bg-light flex-shrink-0 cursor-pointer shadow-sm" style="width: 84px; height: 84px; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+                        {% if archivo.tipo_archivo == 'VIDEO' %}
+                            <div class="w-100 h-100 bg-secondary text-white d-flex align-items-center justify-content-center rounded-2">
+                                <i class="bi bi-play-circle-fill fs-3 text-warning"></i>
+                            </div>
+                        {% else %}
+                            <img src="{{ url_for('static', filename=archivo.ruta_archivo) }}" class="w-100 h-100 rounded-2" style="object-fit: cover;" alt="Evidencia">
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Atributo 7: Motivo de Cambio (Caja Testimonial con Estilo Amigable) -->
+        <div class="tarjeta-vibrante p-4">
+            <div class="d-flex align-items-center gap-2 mb-3">
+                <span class="icono-marca" style="width: 32px; height: 32px; border-radius: 8px;">
+                    <i class="bi bi-chat-quote-fill fs-6"></i>
+                </span>
+                <h5 class="fw-bold mb-0 text-dark" style="font-family: var(--fuente-titulos);">
+                    Motivo de Cambio (Atributo Obligatorio 7)
+                </h5>
+            </div>
+            <div class="p-3 bg-light rounded-4 border-start border-4 border-success">
+                <p class="mb-0 text-dark fw-medium" style="font-family: var(--fuente-titulos); font-style: italic; font-size: 1.05rem;">
+                    "{{ prenda.motivo_cambio }}"
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Columna Derecha: Ficha Técnica de los 7 Atributos y Módulo de Canje -->
+    <div class="col-lg-5">
+        <div class="tarjeta-vibrante p-4 p-md-4 mb-4">
+            <!-- Barra Superior: Categoría y Estado del Artículo -->
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <span class="badge badge-pildora {{ prenda.material.obtener_clase_familia() }}">
+                    <i class="bi bi-folder2-open"></i> {{ prenda.categoria.nombre_categoria }}
+                </span>
+                {% if prenda.estado_publicacion == 'PUBLICADA' %}
+                    <span class="badge badge-pildora bg-success text-white shadow-sm">
+                        <i class="bi bi-check-circle-fill"></i> Publicada
+                    </span>
+                {% elif prenda.estado_publicacion == 'PENDIENTE_APROBACION' %}
+                    <span class="badge badge-pildora bg-warning text-dark shadow-sm">
+                        <i class="bi bi-hourglass-split"></i> En Moderación de Joyería
+                    </span>
+                {% elif prenda.estado_publicacion == 'INTERCAMBIADA' %}
+                    <span class="badge badge-pildora bg-primary text-white shadow-sm">
+                        <i class="bi bi-arrow-left-right"></i> Intercambiada
+                    </span>
+                {% else %}
+                    <span class="badge badge-pildora bg-secondary text-white">{{ prenda.estado_publicacion }}</span>
+                {% endif %}
+            </div>
+
+            <!-- Título Principal -->
+            <h3 class="fw-bold text-dark mb-3" style="font-family: var(--fuente-titulos); letter-spacing: -0.015em;">
+                {{ prenda.titulo_publicacion }}
+            </h3>
+
+            <!-- Caja de Valoración en Puntos Eco-Fashion Vibrante -->
+            <div class="p-4 rounded-4 mb-4 text-center shadow-sm" style="background: linear-gradient(135deg, #ECFDF5 0%, #D1FAE5 100%); border: 2px solid rgba(16, 185, 129, 0.3);">
+                <span class="text-success fw-bold small text-uppercase d-block" style="letter-spacing: 0.05em;">
+                    Valoración Calculada Dinámicamente
+                </span>
+                <div class="d-flex justify-content-center align-items-baseline gap-2 my-1">
+                    <span class="display-4 fw-bold text-success" style="font-family: var(--fuente-titulos);">
+                        {{ prenda.puntos_valoracion }}
+                    </span>
+                    <span class="fs-4 text-success fw-bold">puntos</span>
+                </div>
+                <small class="text-muted fw-semibold">
+                    Calculado con la fórmula paramétrica oficial en SQL Server
+                </small>
+            </div>
+
+            <!-- Alerta Informativa para Joyas o Metales Preciosos -->
+            {% if prenda.material.es_metal_o_joya_preciosa %}
+            <div class="alert alerta-vibrante alerta-vibrante-warning small p-3 d-flex align-items-start mb-4">
+                <i class="bi bi-gem fs-4 me-2 flex-shrink-0 text-warning"></i>
+                <div>
+                    <strong class="text-dark">Pieza de Joyería Preciosa:</strong> Clasificada en <em>{{ prenda.material.familia_material }}</em>.
+                    {% if prenda.estado_publicacion == 'PENDIENTE_APROBACION' %}
+                    Sus puntos se encuentran <strong>retenidos</strong> en billetera preventiva hasta aprobación de autenticidad por moderación.
+                    {% else %}
+                    Autenticidad y metales verificados satisfactoriamente por el equipo de moderación.
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Ficha Técnica de los 7 Atributos Obligatorios -->
+            <div class="d-flex align-items-center justify-content-between mb-2">
+                <h6 class="fw-bold text-dark text-uppercase mb-0" style="font-family: var(--fuente-titulos); font-size: 0.82rem; letter-spacing: 0.04em;">
+                    Ficha Técnica (7 Atributos)
+                </h6>
+                <span class="badge badge-pildora {{ prenda.material.obtener_clase_sostenibilidad() }}">
+                    <i class="bi bi-shield-check"></i> {{ prenda.material.nivel_sostenibilidad }}
+                </span>
+            </div>
+
+            <div class="list-group list-group-flush border-top border-bottom mb-4" style="font-size: 0.9rem;">
+                <!-- Atributo 1: Material -->
+                <div class="list-group-item d-flex justify-content-between px-0 py-2 bg-transparent">
+                    <span class="text-muted"><i class="bi bi-layers-fill me-2 text-success"></i>1. Material:</span>
+                    <strong class="text-end text-dark">{{ prenda.material.nombre_material }}</strong>
+                </div>
+                <!-- Atributo 2: Medida de Largo en cm -->
+                <div class="list-group-item d-flex justify-content-between px-0 py-2 bg-transparent">
+                    <span class="text-muted"><i class="bi bi-rulers me-2 text-info"></i>2. Medida de Largo:</span>
+                    <strong class="text-end text-dark">{{ prenda.medida_largo_cm }} cm</strong>
+                </div>
+                <!-- Atributo 3: Talla -->
+                <div class="list-group-item d-flex justify-content-between px-0 py-2 bg-transparent">
+                    <span class="text-muted"><i class="bi bi-aspect-ratio me-2 text-primary"></i>3. Talla:</span>
+                    <strong class="text-end badge bg-dark text-white px-2 py-1" style="border-radius: 8px;">{{ prenda.talla }}</strong>
+                </div>
+                <!-- Atributo 4: Procedencia / Marca -->
+                <div class="list-group-item d-flex justify-content-between px-0 py-2 bg-transparent">
+                    <span class="text-muted"><i class="bi bi-tag-fill me-2 text-warning"></i>4. Procedencia / Marca:</span>
+                    <strong class="text-end text-dark">{{ prenda.procedencia }}</strong>
+                </div>
+                <!-- Atributo 5: Estado de Aspecto -->
+                <div class="list-group-item d-flex justify-content-between px-0 py-2 bg-transparent">
+                    <span class="text-muted"><i class="bi bi-stars me-2 text-danger"></i>5. Aspecto Físico:</span>
+                    <strong class="text-end text-success">{{ prenda.estado_aspecto.nombre_estado }}</strong>
+                </div>
+                <!-- Atributo 6: Nivel de Utilidad -->
+                <div class="list-group-item d-flex justify-content-between px-0 py-2 bg-transparent">
+                    <span class="text-muted"><i class="bi bi-lightning-charge-fill me-2 text-amber" style="color: var(--color-ambar);"></i>6. Nivel de Utilidad:</span>
+                    <strong class="text-end text-dark">{{ prenda.nivel_utilidad.nombre_utilidad }}</strong>
+                </div>
+                <!-- Familia Taxonómica -->
+                <div class="list-group-item d-flex justify-content-between px-0 py-2 bg-transparent">
+                    <span class="text-muted"><i class="bi bi-diagram-3-fill me-2 text-secondary"></i>Familia Material:</span>
+                    <span class="text-end text-muted small fw-semibold">{{ prenda.material.familia_material }}</span>
+                </div>
+            </div>
+
+            <!-- Ficha del Usuario Propietario -->
+            <div class="p-3 bg-light rounded-4 mb-4 d-flex align-items-center border">
+                <div class="bg-success text-white rounded-circle d-flex align-items-center justify-content-center me-3 shadow-sm" style="width: 48px; height: 48px; font-weight: 800; font-size: 1.15rem;">
+                    {{ prenda.propietario.nombre_completo[0].upper() }}
+                </div>
+                <div>
+                    <span class="small text-muted d-block">Publicado por</span>
+                    <strong class="text-dark">{{ prenda.propietario.nombre_completo }}</strong>
+                    <div class="text-muted small">
+                        <i class="bi bi-geo-alt-fill text-danger me-1"></i>{{ prenda.propietario.ciudad_ubicacion }} &bull;
+                        {{ prenda.fecha_publicacion.strftime('%d/%m/%Y') }}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Botón de Adquisición Transaccional con Puntos -->
+            <div class="d-grid gap-2">
+                {% if current_user.is_authenticated %}
+                    {% if current_user.id_usuario == prenda.id_usuario_propietario %}
+                        <div class="alert alerta-vibrante alerta-vibrante-info small text-center mb-0">
+                            <i class="bi bi-info-circle-fill me-1"></i> Esta prenda te pertenece (no puedes auto-adquirirla).
+                        </div>
+                    {% elif prenda.estado_publicacion == 'PUBLICADA' %}
+                        {% if current_user.saldo_puntos_disponibles >= prenda.puntos_valoracion %}
+                            <!-- Comparativa de saldo para dar total certeza al usuario -->
+                            <div class="mb-2 p-2 bg-light rounded-3 text-center small text-muted border">
+                                Tu saldo disponible: <strong class="text-success">{{ current_user.saldo_puntos_disponibles }} pts</strong> | 
+                                Saldo posterior: <strong class="text-primary">{{ current_user.saldo_puntos_disponibles - prenda.puntos_valoracion }} pts</strong>
+                            </div>
+                            <a href="/catalogo/adquirir/{{ prenda.id_prenda }}" class="btn btn-vibrante-esmeralda btn-lg justify-content-center" onclick="return confirm('¿Confirmas que deseas intercambiar {{ prenda.puntos_valoracion }} puntos por este artículo?');">
+                                <i class="bi bi-bag-check-fill"></i> Adquirir por {{ prenda.puntos_valoracion }} Puntos
+                            </a>
+                        {% else %}
+                            <div class="alert alerta-vibrante alerta-vibrante-warning small mb-2 text-center">
+                                <i class="bi bi-exclamation-triangle-fill me-1"></i> Puntos insuficientes. Tienes <strong>{{ current_user.saldo_puntos_disponibles }} pts</strong> y requieres <strong>{{ prenda.puntos_valoracion }} pts</strong>.
+                            </div>
+                            <button class="btn btn-secondary btn-lg" disabled style="border-radius: var(--radio-boton);">
+                                <i class="bi bi-lock-fill me-1"></i> Puntos Insuficientes
+                            </button>
+                        {% endif %}
+                    {% else %}
+                        <button class="btn btn-secondary btn-lg" disabled style="border-radius: var(--radio-boton);">
+                            Artículo No Disponible para Intercambio
+                        </button>
+                    {% endif %}
+                {% else %}
+                    <a href="{{ url_for('autenticacion.iniciar_sesion') }}" class="btn btn-vibrante-esmeralda btn-lg justify-content-center">
+                        <i class="bi bi-box-arrow-in-right"></i> Inicia Sesión para Adquirir
+                    </a>
+                {% endif %}
+                <a href="{{ url_for('catalogo.explorar') }}" class="btn btn-outline-secondary py-2" style="border-radius: var(--radio-boton);">
+                    <i class="bi bi-arrow-left me-1"></i> Volver al Catálogo
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

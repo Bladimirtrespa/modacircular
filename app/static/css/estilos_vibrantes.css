@@ -1,0 +1,487 @@
+/* ==============================================================================
+   HOJA DE ESTILOS ECO-FASHION VIBRANTE (estilos_vibrantes.css)
+   Plataforma Sostenible de Intercambio de Ropa y Accesorios Basada en Puntos
+   Tipografía: Plus Jakarta Sans + Nunito | Paleta: +30% Más Colorida y Armónica
+   ============================================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+:root {
+    /* Tipografías */
+    --fuente-base: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+    --fuente-titulos: 'Nunito', 'Plus Jakarta Sans', sans-serif;
+
+    /* Paleta Eco-Fashion Vibrante */
+    --color-esmeralda: #10B981;
+    --color-esmeralda-oscuro: #059669;
+    --color-esmeralda-claro: #D1FAE5;
+    
+    --color-turquesa: #06B6D4;
+    --color-turquesa-oscuro: #0891B2;
+    --color-turquesa-claro: #CFFAFE;
+    
+    --color-ambar: #F59E0B;
+    --color-ambar-oscuro: #D97706;
+    --color-ambar-claro: #FEF3C7;
+
+    --color-coral: #F97316;
+    --color-coral-claro: #FFEDD5;
+
+    --color-violeta: #8B5CF6;
+    --color-violeta-oscuro: #7C3AED;
+    --color-violeta-claro: #EDE9FE;
+
+    --color-rosa-lujo: #EC4899;
+
+    /* Fondos y Neutros */
+    --fondo-suave: linear-gradient(135deg, #F0FDF4 0%, #F8FAFC 50%, #ECFEFF 100%);
+    --fondo-blanco: #FFFFFF;
+    --color-texto-principal: #1E293B;
+    --color-texto-secundario: #64748B;
+    --color-borde-suave: #E2E8F0;
+
+    /* Sombras Policromáticas Suaves */
+    --sombra-tarjeta: 0 10px 25px -5px rgba(16, 185, 129, 0.08), 0 8px 10px -6px rgba(6, 182, 212, 0.05);
+    --sombra-elevada: 0 20px 30px -10px rgba(16, 185, 129, 0.15), 0 10px 15px -5px rgba(14, 165, 233, 0.08);
+    --sombra-joya: 0 10px 25px -5px rgba(139, 92, 246, 0.2);
+
+    /* Radios de borde amplios y amigables */
+    --radio-tarjeta: 20px;
+    --radio-boton: 14px;
+    --radio-pildora: 50rem;
+}
+
+/* ==============================================================================
+   REGLAS GENERALES Y TIPOGRAFÍA
+   ============================================================================== */
+
+body {
+    font-family: var(--fuente-base);
+    background: var(--fondo-suave);
+    background-attachment: fixed;
+    color: var(--color-texto-principal);
+    line-height: 1.6;
+    letter-spacing: 0.015em;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+h1, h2, h3, h4, h5, h6, .titulo-amigable {
+    font-family: var(--fuente-titulos);
+    font-weight: 800;
+    letter-spacing: -0.015em;
+    color: #0F172A;
+}
+
+/* ==============================================================================
+   NAVBAR GLASSMORPHISM PREMIUM
+   ============================================================================== */
+
+.navbar-vibrante {
+    background: rgba(255, 255, 255, 0.88);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 2px solid rgba(16, 185, 129, 0.12);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+    transition: all 0.3s ease;
+}
+
+.marca-logo {
+    font-family: var(--fuente-titulos);
+    font-weight: 900;
+    font-size: 1.45rem;
+    background: linear-gradient(135deg, var(--color-esmeralda-oscuro), var(--color-turquesa));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.icono-marca {
+    background: linear-gradient(135deg, var(--color-esmeralda), var(--color-turquesa));
+    color: white;
+    width: 38px;
+    height: 38px;
+    border-radius: 12px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 10px rgba(16, 185, 129, 0.3);
+}
+
+.nav-link-vibrante {
+    font-weight: 600;
+    color: var(--color-texto-principal) !important;
+    padding: 0.5rem 0.9rem !important;
+    border-radius: 10px;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.nav-link-vibrante:hover, .nav-link-vibrante.active {
+    background: rgba(16, 185, 129, 0.09);
+    color: var(--color-esmeralda-oscuro) !important;
+    transform: translateY(-1px);
+}
+
+/* ==============================================================================
+   PÍLDORAS DINÁMICAS DE BILLETERA DUAL
+   ============================================================================== */
+
+.billetera-contenedor {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    background: rgba(255, 255, 255, 0.7);
+    padding: 0.35rem 0.6rem;
+    border-radius: var(--radio-pildora);
+    border: 1px solid rgba(16, 185, 129, 0.2);
+}
+
+.billetera-pildora-disponible {
+    background: linear-gradient(135deg, #10B981, #059669);
+    color: #FFFFFF;
+    font-weight: 700;
+    font-size: 0.88rem;
+    border-radius: var(--radio-pildora);
+    padding: 0.4rem 0.95rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25);
+    transition: transform 0.2s ease;
+}
+
+.billetera-pildora-disponible:hover {
+    transform: scale(1.03);
+    color: #FFFFFF;
+}
+
+.billetera-pildora-retenida {
+    background: linear-gradient(135deg, #F59E0B, #EA580C);
+    color: #FFFFFF;
+    font-weight: 700;
+    font-size: 0.88rem;
+    border-radius: var(--radio-pildora);
+    padding: 0.4rem 0.95rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    box-shadow: 0 4px 12px rgba(245, 158, 11, 0.25);
+    transition: transform 0.2s ease;
+}
+
+.billetera-pildora-retenida:hover {
+    transform: scale(1.03);
+    color: #FFFFFF;
+}
+
+/* ==============================================================================
+   TARJETAS Y CONTENEDORES VIBRANTES
+   ============================================================================== */
+
+.tarjeta-vibrante {
+    background: var(--fondo-blanco);
+    border-radius: var(--radio-tarjeta);
+    border: 1px solid rgba(226, 232, 240, 0.8);
+    box-shadow: var(--sombra-tarjeta);
+    transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    overflow: hidden;
+}
+
+.tarjeta-vibrante:hover {
+    transform: translateY(-5px);
+    box-shadow: var(--sombra-elevada);
+}
+
+.tarjeta-header-gradiente {
+    background: linear-gradient(135deg, #ECFDF5 0%, #F0FDFA 100%);
+    border-bottom: 1px solid rgba(16, 185, 129, 0.15);
+    padding: 1.25rem 1.5rem;
+}
+
+.tarjeta-header-joya {
+    background: linear-gradient(135deg, #FAF5FF 0%, #FDF2F8 100%);
+    border-bottom: 1px solid rgba(139, 92, 246, 0.2);
+    padding: 1.25rem 1.5rem;
+}
+
+.tarjeta-header-admin {
+    background: linear-gradient(135deg, #F8FAFC 0%, #EEF2F6 100%);
+    border-bottom: 2px solid rgba(14, 165, 233, 0.2);
+    padding: 1.25rem 1.5rem;
+}
+
+/* ==============================================================================
+   BOTONES COLORIDOS Y MODERNOS
+   ============================================================================== */
+
+.btn-vibrante-esmeralda {
+    background: linear-gradient(135deg, #10B981, #059669);
+    color: #FFFFFF;
+    font-weight: 700;
+    border-radius: var(--radio-boton);
+    border: none;
+    padding: 0.6rem 1.4rem;
+    box-shadow: 0 4px 14px rgba(16, 185, 129, 0.3);
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.btn-vibrante-esmeralda:hover {
+    background: linear-gradient(135deg, #059669, #047857);
+    color: #FFFFFF;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 18px rgba(16, 185, 129, 0.4);
+}
+
+.btn-vibrante-turquesa {
+    background: linear-gradient(135deg, #06B6D4, #0891B2);
+    color: #FFFFFF;
+    font-weight: 700;
+    border-radius: var(--radio-boton);
+    border: none;
+    padding: 0.6rem 1.4rem;
+    box-shadow: 0 4px 14px rgba(6, 182, 212, 0.3);
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.btn-vibrante-turquesa:hover {
+    background: linear-gradient(135deg, #0891B2, #0e7490);
+    color: #FFFFFF;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 18px rgba(6, 182, 212, 0.4);
+}
+
+.btn-vibrante-violeta {
+    background: linear-gradient(135deg, #8B5CF6, #6D28D9);
+    color: #FFFFFF;
+    font-weight: 700;
+    border-radius: var(--radio-boton);
+    border: none;
+    padding: 0.6rem 1.4rem;
+    box-shadow: 0 4px 14px rgba(139, 92, 246, 0.3);
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.btn-vibrante-violeta:hover {
+    background: linear-gradient(135deg, #7C3AED, #5B21B6);
+    color: #FFFFFF;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 18px rgba(139, 92, 246, 0.4);
+}
+
+.btn-vibrante-ambar {
+    background: linear-gradient(135deg, #F59E0B, #D97706);
+    color: #FFFFFF;
+    font-weight: 700;
+    border-radius: var(--radio-boton);
+    border: none;
+    padding: 0.6rem 1.4rem;
+    box-shadow: 0 4px 14px rgba(245, 158, 11, 0.3);
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.btn-vibrante-ambar:hover {
+    background: linear-gradient(135deg, #D97706, #B45309);
+    color: #FFFFFF;
+    transform: translateY(-2px);
+}
+
+/* ==============================================================================
+   BADGES COLORIDOS TIPO PÍLDORA POR FAMILIA Y SOSTENIBILIDAD
+   ============================================================================== */
+
+.badge-pildora {
+    font-family: var(--fuente-titulos);
+    font-weight: 700;
+    border-radius: var(--radio-pildora);
+    padding: 0.35rem 0.85rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.78rem;
+    letter-spacing: 0.02em;
+}
+
+/* Familias de Materiales */
+.badge-familia-sintetico {
+    background: #E0F2FE;
+    color: #0369A1;
+    border: 1px solid #BAE6FD;
+}
+
+.badge-familia-vegetal {
+    background: #D1FAE5;
+    color: #065F46;
+    border: 1px solid #A7F3D0;
+}
+
+.badge-familia-animal {
+    background: #FEF3C7;
+    color: #92400E;
+    border: 1px solid #FDE68A;
+}
+
+.badge-familia-cuero {
+    background: #FFEDD5;
+    color: #9A3412;
+    border: 1px solid #FED7AA;
+}
+
+.badge-familia-accesorio {
+    background: #E0E7FF;
+    color: #3730A3;
+    border: 1px solid #C7D2FE;
+}
+
+.badge-familia-joya {
+    background: linear-gradient(135deg, #FDF4FF, #FAF5FF);
+    color: #7E22CE;
+    border: 1px solid #E9D5FF;
+    box-shadow: 0 2px 6px rgba(147, 51, 234, 0.15);
+}
+
+/* Niveles de Sostenibilidad */
+.badge-sostenible-alto {
+    background: #DCFCE7;
+    color: #15803D;
+    font-weight: 800;
+}
+
+.badge-sostenible-medio {
+    background: #FEF9C3;
+    color: #854D0E;
+}
+
+.badge-sostenible-estandar {
+    background: #F1F5F9;
+    color: #475569;
+}
+
+.badge-sostenible-lujo {
+    background: linear-gradient(135deg, #FEF08A, #FDE047);
+    color: #713F12;
+    font-weight: 800;
+}
+
+/* Estados de Suspensión y Cuenta */
+.badge-cuenta-activa {
+    background: #D1FAE5;
+    color: #065F46;
+}
+
+.badge-cuenta-temporal {
+    background: #FEF3C7;
+    color: #92400E;
+    border: 1px dashed #F59E0B;
+}
+
+.badge-cuenta-permanente {
+    background: #FEE2E2;
+    color: #991B1B;
+}
+
+/* ==============================================================================
+   TABLAS MODERNAS Y CRUD
+   ============================================================================== */
+
+.tabla-vibrante-contenedor {
+    background: #FFFFFF;
+    border-radius: var(--radio-tarjeta);
+    border: 1px solid var(--color-borde-suave);
+    overflow: hidden;
+    box-shadow: var(--sombra-tarjeta);
+}
+
+.tabla-vibrante {
+    margin-bottom: 0;
+}
+
+.tabla-vibrante thead th {
+    background: #F8FAFC;
+    color: #475569;
+    font-family: var(--fuente-titulos);
+    font-weight: 800;
+    font-size: 0.82rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border-bottom: 2px solid var(--color-borde-suave);
+    padding: 1rem 1.25rem;
+}
+
+.tabla-vibrante tbody td {
+    padding: 1rem 1.25rem;
+    vertical-align: middle;
+    border-bottom: 1px solid #F1F5F9;
+    font-size: 0.92rem;
+}
+
+.tabla-vibrante tbody tr:hover {
+    background-color: #F8FAFC;
+}
+
+/* ==============================================================================
+   ALERTAS Y NOTIFICACIONES
+   ============================================================================== */
+
+.alerta-vibrante {
+    border-radius: 16px;
+    border: none;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+    padding: 1rem 1.5rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+}
+
+.alerta-vibrante-success {
+    background: #ECFDF5;
+    color: #065F46;
+    border-left: 5px solid #10B981;
+}
+
+.alerta-vibrante-danger {
+    background: #FEF2F2;
+    color: #991B1B;
+    border-left: 5px solid #EF4444;
+}
+
+.alerta-vibrante-warning {
+    background: #FFFBEB;
+    color: #92400E;
+    border-left: 5px solid #F59E0B;
+}
+
+.alerta-vibrante-info {
+    background: #EFF6FF;
+    color: #1E40AF;
+    border-left: 5px solid #3B82F6;
+}
+
+/* ==============================================================================
+   FOOTER MODERNO
+   ============================================================================== */
+
+.pie-pagina-vibrante {
+    margin-top: auto;
+    background: #FFFFFF;
+    border-top: 1px solid var(--color-borde-suave);
+    padding: 2.5rem 0 1.5rem 0;
+}

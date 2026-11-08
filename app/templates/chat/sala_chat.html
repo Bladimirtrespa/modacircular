@@ -1,0 +1,385 @@
+{% extends "base.html" %}
+
+{% block titulo %}Sala de Chat y Logística #{{ sala.codigo_sala }} - ModaCircular{% endblock %}
+
+{% block contenido %}
+<!-- Encabezado de la Sala de Chat -->
+<div class="mb-4">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3">
+        <div>
+            <div class="d-flex align-items-center gap-2 mb-1 flex-wrap">
+                <span class="badge bg-dark font-monospace text-light px-3 py-1 fs-6">#{{ sala.codigo_sala }}</span>
+                {% if sala.estado_sala == 'ACTIVA' %}
+                <span class="badge bg-success text-white fw-bold rounded-pill px-3"><i class="bi bi-broadcast"></i> CHAT ACTIVO</span>
+                {% elif sala.estado_sala == 'CERRADA_EXITOSA' %}
+                <span class="badge bg-primary text-white fw-bold rounded-pill px-3"><i class="bi bi-check-circle-fill"></i> ENTREGA COMPLETADA</span>
+                {% elif sala.estado_sala == 'EN_DISPUTA_AUDITORIA' %}
+                <span class="badge bg-danger text-white fw-bold rounded-pill px-3"><i class="bi bi-shield-exclamation"></i> EN DISPUTA / CONGELADO</span>
+                {% elif sala.estado_sala == 'CANCELADA_POR_FRAUDE' %}
+                <span class="badge bg-dark text-danger fw-bold rounded-pill px-3"><i class="bi bi-slash-circle-fill"></i> CANCELADO POR FRAUDE</span>
+                {% endif %}
+                <span class="badge bg-light text-dark border rounded-pill">
+                    {% if sala.tipo_operacion == 'TRUEQUE_INVENTARIO' %}Trueque Directo{% else %}Adquisición por Puntos{% endif %}
+                </span>
+            </div>
+            <h3 class="fw-bold text-dark mb-0" style="font-family: var(--fuente-titulos);">
+                Coordinación de Envío con {{ contraparte.nombre_completo }}
+            </h3>
+            <small class="text-muted">Apertura: {{ sala.fecha_apertura.strftime('%d/%m/%Y %H:%M') }}</small>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{{ url_for('chat.mis_chats') }}" class="btn btn-outline-secondary btn-sm rounded-pill">
+                <i class="bi bi-chat-left-text me-1"></i> Todos Mis Chats
+            </a>
+            {% if sala.id_oferta_trueque %}
+            <a href="{{ url_for('trueques.detalle_oferta', id_oferta=sala.id_oferta_trueque) }}" class="btn btn-outline-primary btn-sm rounded-pill">
+                <i class="bi bi-arrow-left-right me-1"></i> Ver Trueque
+            </a>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+{% if sala.estado_sala == 'EN_DISPUTA_AUDITORIA' %}
+<div class="alert alert-danger d-flex align-items-center rounded-4 shadow-sm mb-4 p-3 border-danger">
+    <i class="bi bi-shield-slash-fill fs-2 text-danger me-3"></i>
+    <div>
+        <h5 class="fw-bold mb-1 text-danger"><i class="bi bi-lock-fill me-1"></i> SALA CONGELADA POR AUDITORÍA ANTIFRAUDE</h5>
+        <p class="mb-0 small text-dark">
+            Se ha radicado una denuncia formal de controversia o presunta estafa. Por motivos de seguridad y preservación inmutable de la evidencia, el chat se encuentra bloqueado y ningún participante puede alterar registros ni enviar mensajes mientras el Administrador evalúa el dictamen.
+        </p>
+    </div>
+</div>
+{% endif %}
+
+<div class="row g-4 mb-5">
+    <!-- =======================================================================
+         COLUMNA IZQUIERDA: FICHA LOGÍSTICA DE ENTREGA Y DESPACHO
+         ======================================================================= -->
+    <div class="col-lg-5">
+        <div class="tarjeta-vibrante p-4 mb-4" style="border-top: 5px solid #06B6D4 !important;">
+            <div class="d-flex justify-content-between align-items-center pb-2 mb-3 border-bottom">
+                <h5 class="fw-bold text-dark mb-0">
+                    <i class="bi bi-truck text-info me-1"></i> Ficha Logística de Entrega
+                </h5>
+                <button class="btn btn-outline-primary btn-sm rounded-pill" data-bs-toggle="modal" data-bs-target="#modalEditarLogistica" {% if sala.estado_sala != 'ACTIVA' %}disabled{% endif %}>
+                    <i class="bi bi-pencil-square me-1"></i> Editar
+                </button>
+            </div>
+
+            <!-- Datos Actuales de la Ficha -->
+            <div class="d-flex flex-column gap-2 mb-3">
+                <div class="p-3 bg-light rounded-3 border">
+                    <span class="small text-muted d-block fw-semibold">Método Acordado:</span>
+                    <strong class="text-dark fs-6">
+                        {% if sala.metodo_entrega == 'ENVIO_DOMICILIO' %}
+                        <i class="bi bi-box-seam-fill text-primary me-1"></i> Envío a Domicilio con Transportadora
+                        {% elif sala.metodo_entrega == 'ENTREGA_PRESENCIAL' %}
+                        <i class="bi bi-geo-alt-fill text-success me-1"></i> Entrega Presencial en Lugar Público
+                        {% else %}
+                        <i class="bi bi-question-circle text-warning me-1"></i> Por definir entre las partes
+                        {% endif %}
+                    </strong>
+                </div>
+
+                {% if sala.empresa_transportadora or sala.numero_guia_rastreo %}
+                <div class="p-3 bg-light rounded-3 border">
+                    <span class="small text-muted d-block fw-semibold">Rastreo y Transporte:</span>
+                    <strong class="text-primary d-block">{{ sala.empresa_transportadora or 'Transportadora sin especificar' }}</strong>
+                    {% if sala.numero_guia_rastreo %}
+                    <span class="font-monospace fw-bold text-dark small bg-white px-2 py-1 rounded border d-inline-block mt-1">
+                        <i class="bi bi-barcode me-1"></i> Guía: {{ sala.numero_guia_rastreo }}
+                    </span>
+                    {% endif %}
+                </div>
+                {% endif %}
+
+                {% if sala.direccion_envio or sala.ciudad_destino %}
+                <div class="p-3 bg-light rounded-3 border">
+                    <span class="small text-muted d-block fw-semibold">Dirección de Destino:</span>
+                    <strong class="text-dark d-block">{{ sala.direccion_envio or 'Dirección no especificada' }}</strong>
+                    <span class="small text-muted">{{ sala.ciudad_destino or '' }} &bull; Destinatario: {{ sala.nombre_receptor_envio or 'Sin nombre' }} &bull; Tel: {{ sala.telefono_contacto_envio or 'N/A' }}</span>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Estado de Confirmaciones Mutuas -->
+            <div class="p-3 rounded-4 mb-3" style="background: linear-gradient(135deg, #F8FAFC 0%, #F1F5F9 100%); border: 1px solid #E2E8F0;">
+                <span class="small text-muted text-uppercase fw-bold d-block mb-2">Confirmación Dual de Recibido:</span>
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="small text-dark">Tu Confirmación:</span>
+                    {% if mi_confirmacion %}
+                    <span class="badge bg-success rounded-pill px-3"><i class="bi bi-check-circle-fill me-1"></i> Confirmado</span>
+                    {% else %}
+                    <span class="badge bg-secondary rounded-pill px-3"><i class="bi bi-clock me-1"></i> Pendiente</span>
+                    {% endif %}
+                </div>
+                <div class="d-flex justify-content-between align-items-center">
+                    <span class="small text-dark">{{ contraparte.nombre_completo.split()[0] }}:</span>
+                    {% if confirmacion_contraparte %}
+                    <span class="badge bg-success rounded-pill px-3"><i class="bi bi-check-circle-fill me-1"></i> Confirmado</span>
+                    {% else %}
+                    <span class="badge bg-secondary rounded-pill px-3"><i class="bi bi-clock me-1"></i> Pendiente</span>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Botón de Confirmación de Recepción -->
+            {% if sala.estado_sala == 'ACTIVA' and not mi_confirmacion %}
+            <form method="POST" action="{{ url_for('chat.confirmar_entrega', codigo_sala=sala.codigo_sala) }}" class="mb-3" onsubmit="return confirm('¿Confirmas que recibiste el artículo en el estado acordado? Esta acción es definitiva.');">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="btn btn-vibrante-esmeralda w-100 py-3 shadow fw-bold">
+                    <i class="bi bi-check2-circle me-1"></i> Confirmar Recepción del Artículo
+                </button>
+            </form>
+            {% elif sala.estado_sala == 'ACTIVA' and mi_confirmacion %}
+            <div class="alert alert-info py-2 small text-center rounded-3 mb-3">
+                <i class="bi bi-hourglass-split me-1"></i> Ya confirmaste. Esperando que {{ contraparte.nombre_completo.split()[0] }} confirme para cerrar la sala.
+            </div>
+            {% elif sala.estado_sala == 'CERRADA_EXITOSA' %}
+            <div class="alert alert-success py-2 small text-center rounded-3 mb-3">
+                <i class="bi bi-trophy-fill text-warning me-1"></i> Operación completada a satisfacción de ambas partes (+5 pts reputación).
+            </div>
+            {% endif %}
+
+            <!-- Botón Preventivo de Reporte de Estafas -->
+            <div class="pt-3 border-top text-center">
+                <button type="button" class="btn btn-outline-danger btn-sm rounded-pill w-100" data-bs-toggle="modal" data-bs-target="#modalReportarEstafa" {% if sala.estado_sala in ('CERRADA_EXITOSA', 'CANCELADA_POR_FRAUDE') %}disabled{% endif %}>
+                    <i class="bi bi-shield-slash-fill me-1"></i> Reportar Estafa o Incumplimiento
+                </button>
+                <small class="text-muted d-block mt-1" style="font-size: 0.72rem;">Congela la sala y envía el expediente completo a auditoría de un Administrador.</small>
+            </div>
+        </div>
+    </div>
+
+    <!-- =======================================================================
+         COLUMNA DERECHA: STREAM DE MENSAJERÍA PRIVADA
+         ======================================================================= -->
+    <div class="col-lg-7">
+        <div class="tarjeta-vibrante d-flex flex-column" style="height: 650px;">
+            <!-- Cabecera del Stream -->
+            <div class="p-3 border-bottom d-flex align-items-center justify-content-between bg-white rounded-top-4">
+                <div class="d-flex align-items-center gap-2">
+                    <div class="rounded-circle d-flex align-items-center justify-content-center text-white fw-bold" style="width: 38px; height: 38px; background: linear-gradient(135deg, #10B981, #06B6D4);">
+                        {{ contraparte.nombre_completo[:2]|upper }}
+                    </div>
+                    <div>
+                        <strong class="d-block text-dark small">{{ contraparte.nombre_completo }}</strong>
+                        <span class="text-muted small" style="font-size: 0.75rem;">
+                            <i class="bi bi-shield-check text-success"></i> Reputación: {{ contraparte.reputacion_trueques }} pts
+                        </span>
+                    </div>
+                </div>
+                <span class="text-muted small"><i class="bi bi-lock-fill text-secondary"></i> Canal Encriptado y Auditado</span>
+            </div>
+
+            <!-- Caja con Scroll de Mensajes -->
+            <div class="flex-grow-1 p-3 overflow-y-auto d-flex flex-column gap-3" id="cajaMensajes" style="background: #F8FAFC;">
+                {% for m in mensajes %}
+                    {% if m.es_mensaje_sistema %}
+                        <!-- Mensaje de Sistema Centrado -->
+                        <div class="text-center my-1">
+                            <span class="badge bg-secondary-subtle text-dark border px-3 py-2 rounded-pill small" style="max-width: 85%; white-space: normal; line-height: 1.4;">
+                                <i class="bi bi-info-circle-fill text-primary me-1"></i> {{ m.contenido_mensaje }}
+                                <small class="text-muted d-block mt-1" style="font-size: 0.68rem;">{{ m.fecha_envio.strftime('%H:%M') }}</small>
+                            </span>
+                        </div>
+                    {% elif m.id_usuario_emisor == current_user.id_usuario %}
+                        <!-- Mensaje Enviado por Mí (Burbuja Derecha Esmeralda/Turquesa) -->
+                        <div class="d-flex flex-column align-items-end">
+                            <div class="p-3 text-white rounded-4 shadow-sm" style="background: linear-gradient(135deg, #10B981 0%, #059669 100%); max-width: 80%; border-bottom-right-radius: 4px !important;">
+                                <p class="mb-0 small">{{ m.contenido_mensaje }}</p>
+                                {% if m.ruta_adjunto %}
+                                <div class="mt-2 rounded-3 overflow-hidden border border-white border-opacity-25">
+                                    <a href="{{ url_for('static', filename=m.ruta_adjunto) }}" target="_blank">
+                                        <img src="{{ url_for('static', filename=m.ruta_adjunto) }}" alt="Adjunto" class="img-fluid rounded" style="max-height: 180px;">
+                                    </a>
+                                </div>
+                                {% endif %}
+                            </div>
+                            <span class="text-muted small mt-1 pe-1" style="font-size: 0.68rem;">
+                                {{ m.fecha_envio.strftime('%H:%M') }} {% if m.leido %}<i class="bi bi-check2-all text-primary"></i>{% else %}<i class="bi bi-check2"></i>{% endif %}
+                            </span>
+                        </div>
+                    {% else %}
+                        <!-- Mensaje Recibido de la Contraparte (Burbuja Izquierda Gris) -->
+                        <div class="d-flex flex-column align-items-start">
+                            <div class="p-3 text-dark bg-white rounded-4 shadow-sm border" style="max-width: 80%; border-bottom-left-radius: 4px !important;">
+                                <p class="mb-0 small">{{ m.contenido_mensaje }}</p>
+                                {% if m.ruta_adjunto %}
+                                <div class="mt-2 rounded-3 overflow-hidden border">
+                                    <a href="{{ url_for('static', filename=m.ruta_adjunto) }}" target="_blank">
+                                        <img src="{{ url_for('static', filename=m.ruta_adjunto) }}" alt="Adjunto" class="img-fluid rounded" style="max-height: 180px;">
+                                    </a>
+                                </div>
+                                {% endif %}
+                            </div>
+                            <span class="text-muted small mt-1 ps-1" style="font-size: 0.68rem;">
+                                {{ m.fecha_envio.strftime('%H:%M') }}
+                            </span>
+                        </div>
+                    {% endif %}
+                {% endfor %}
+            </div>
+
+            <!-- Pie con Input de Mensajes y Adjuntos -->
+            <div class="p-3 bg-white border-top rounded-bottom-4">
+                {% if sala.estado_sala == 'ACTIVA' %}
+                <form method="POST" action="{{ url_for('chat.enviar_mensaje', codigo_sala=sala.codigo_sala) }}" enctype="multipart/form-data">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <div class="input-group">
+                        <label class="btn btn-outline-secondary rounded-start-pill" title="Adjuntar foto de soporte o comprobante">
+                            <i class="bi bi-camera"></i>
+                            <input type="file" name="adjunto" class="d-none" accept="image/*" onchange="mostrarNombreArchivo(this)">
+                        </label>
+                        <input type="text" name="contenido_mensaje" class="form-control" placeholder="Escribe tu mensaje o consulta de entrega..." autocomplete="off">
+                        <button type="submit" class="btn btn-vibrante-esmeralda rounded-end-pill px-4">
+                            <i class="bi bi-send-fill"></i>
+                        </button>
+                    </div>
+                    <small id="etiquetaArchivo" class="text-muted small d-block mt-1 ps-2" style="font-size: 0.75rem;"></small>
+                </form>
+                {% else %}
+                <div class="text-center py-2 text-muted small">
+                    <i class="bi bi-lock-fill me-1"></i> Este chat se encuentra cerrado o congelado. No se permiten nuevos mensajes.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- =======================================================================
+     MODAL EDITAR LOGÍSTICA DE ENVÍO
+     ======================================================================= -->
+<div class="modal fade" id="modalEditarLogistica" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content" style="border-radius: 20px;">
+            <form method="POST" action="{{ url_for('chat.actualizar_envio', codigo_sala=sala.codigo_sala) }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="modal-header tarjeta-header-gradiente">
+                    <h5 class="modal-title fw-bold text-info">
+                        <i class="bi bi-truck me-2"></i> Actualizar Ficha Logística de Entrega
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small">Método de Entrega</label>
+                        <select name="metodo_entrega" class="form-select" id="selectorMetodo">
+                            <option value="POR_DEFINIR" {% if sala.metodo_entrega == 'POR_DEFINIR' %}selected{% endif %}>Por Definir</option>
+                            <option value="ENVIO_DOMICILIO" {% if sala.metodo_entrega == 'ENVIO_DOMICILIO' %}selected{% endif %}>Envío a Domicilio con Empresa Transportadora</option>
+                            <option value="ENTREGA_PRESENCIAL" {% if sala.metodo_entrega == 'ENTREGA_PRESENCIAL' %}selected{% endif %}>Entrega Presencial (Punto de Encuentro Seguro)</option>
+                        </select>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold small">Empresa Transportadora</label>
+                            <input type="text" name="empresa_transportadora" class="form-control" value="{{ sala.empresa_transportadora or '' }}" placeholder="Ej: Servientrega, Coordinadora, Interrapidísimo">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold small">Número de Guía de Rastreo</label>
+                            <input type="text" name="numero_guia_rastreo" class="form-control" value="{{ sala.numero_guia_rastreo or '' }}" placeholder="Ej: GUIA-987654321">
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-8">
+                            <label class="form-label fw-semibold small">Dirección Exacta de Despacho</label>
+                            <input type="text" name="direccion_envio" class="form-control" value="{{ sala.direccion_envio or '' }}" placeholder="Calle / Carrera / Barrio / Conjunto">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold small">Ciudad de Destino</label>
+                            <input type="text" name="ciudad_destino" class="form-control" value="{{ sala.ciudad_destino or '' }}" placeholder="Ej: Medellín">
+                        </div>
+                    </div>
+
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold small">Nombre de Quien Recibe</label>
+                            <input type="text" name="nombre_receptor_envio" class="form-control" value="{{ sala.nombre_receptor_envio or '' }}" placeholder="Nombre y Apellidos completos">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold small">Teléfono de Contacto</label>
+                            <input type="text" name="telefono_contacto_envio" class="form-control" value="{{ sala.telefono_contacto_envio or '' }}" placeholder="+57 300 000 0000">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary rounded-pill px-3" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-vibrante-turquesa">Guardar y Notificar en Chat</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- =======================================================================
+     MODAL REPORTAR ESTAFA O FRAUDE (VINCULADO A BANDEJA DE AUDITORÍA)
+     ======================================================================= -->
+<div class="modal fade" id="modalReportarEstafa" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content" style="border-radius: 20px;">
+            <form method="POST" action="{{ url_for('auditoria.crear_reporte', codigo_sala=sala.codigo_sala) }}" enctype="multipart/form-data">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="modal-header bg-danger text-white" style="border-top-left-radius: 20px; border-top-right-radius: 20px;">
+                    <h5 class="modal-title fw-bold">
+                        <i class="bi bi-shield-slash-fill me-2"></i> Reportar Estafa o Incumplimiento
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="alert alert-warning small mb-3">
+                        <i class="bi bi-exclamation-triangle-fill me-1"></i> Al enviar este reporte, la sala pasará al estado <strong>EN DISPUTA / CONGELADA</strong>. El equipo de administración revisará los mensajes y evidencias para emitir dictamen y sanción.
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small">Categoría del Reporte</label>
+                        <select name="categoria_reporte" class="form-select" required>
+                            <option value="INTENTO_ESTAFA">Intento de Estafa o Engaño</option>
+                            <option value="ARTICULO_FALSIFICADO_O_DISTINTO">Artículo Falsificado, Roto o Distinto</option>
+                            <option value="NO_ENVIO_O_INCUMPLIMIENTO">No Envío o Incumplimiento de la Guía</option>
+                            <option value="LENGUAJE_OFENSIVO_O_ACOSO">Lenguaje Ofensivo o Acoso</option>
+                            <option value="SOLICITUD_DINERO_EXTERNO">Solicitud de Dinero Externo Prohibido</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small">Descripción Detallada de los Hechos</label>
+                        <textarea name="descripcion_hechos" class="form-control" rows="4" placeholder="Explica detalladamente qué ocurrió, números de guía falsos o inconsistencias..." required maxlength="1500"></textarea>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small">Foto de Evidencia Adicional (Opcional)</label>
+                        <input type="file" name="evidencia" class="form-control" accept="image/*">
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary rounded-pill px-3" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-danger rounded-pill px-4 fw-bold">Enviar Reporte a Auditoría</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+function mostrarNombreArchivo(input) {
+    const etiqueta = document.getElementById('etiquetaArchivo');
+    if (input.files && input.files.length > 0) {
+        etiqueta.innerHTML = '<i class="bi bi-paperclip text-success"></i> Adjunto: ' + input.files[0].name;
+    } else {
+        etiqueta.innerHTML = '';
+    }
+}
+
+// Auto-scroll al final del chat al cargar
+document.addEventListener('DOMContentLoaded', function() {
+    const caja = document.getElementById('cajaMensajes');
+    if (caja) {
+        caja.scrollTop = caja.scrollHeight;
+    }
+});
+</script>
+{% endblock %}

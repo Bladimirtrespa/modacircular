@@ -1,0 +1,189 @@
+{% extends "base.html" %}
+
+{% block titulo %}Libro Mayor de Puntos (Kardex) - ModaCircular{% endblock %}
+
+{% block contenido %}
+<!-- Encabezado de la Sección con Estilo Eco-Fashion Vibrante -->
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+    <div>
+        <div class="d-flex align-items-center gap-2 mb-1">
+            <span class="icono-marca" style="width: 38px; height: 38px; border-radius: 10px;">
+                <i class="bi bi-receipt-cutoff fs-5"></i>
+            </span>
+            <h2 class="fw-bold mb-0 text-dark" style="font-family: var(--fuente-titulos); letter-spacing: -0.02em;">
+                Kardex Contable de Puntos
+            </h2>
+        </div>
+        <p class="text-muted small mb-0 ms-md-5 ps-md-2">
+            Libro mayor inmutable con trazabilidad matemática de cada débito y crédito registrado en SQL Server
+        </p>
+    </div>
+    <div class="d-flex align-items-center gap-2">
+        <span class="badge badge-pildora bg-white text-dark border shadow-sm px-3 py-2 fs-6">
+            <i class="bi bi-clock-history text-primary"></i> Asientos: <strong>{{ movimientos|length }}</strong>
+        </span>
+        <a href="{{ url_for('prendas.publicar') }}" class="btn btn-vibrante-esmeralda btn-sm">
+            <i class="bi bi-plus-circle-fill"></i> Publicar y Ganar Puntos
+        </a>
+    </div>
+</div>
+
+<!-- Tarjetas KPI Cromáticas de Balance Contable -->
+<div class="row g-3 mb-4">
+    <!-- Saldo Disponible -->
+    <div class="col-sm-6 col-lg-3">
+        <div class="tarjeta-vibrante p-4 h-100 text-center" style="background: linear-gradient(135deg, #ECFDF5 0%, #D1FAE5 100%); border: 2px solid rgba(16, 185, 129, 0.3);">
+            <div class="d-inline-flex p-2 rounded-circle bg-white text-success shadow-sm mb-2">
+                <i class="bi bi-wallet2 fs-4"></i>
+            </div>
+            <span class="text-success small text-uppercase fw-bold d-block" style="letter-spacing: 0.04em;">Saldo Disponible</span>
+            <div class="fs-2 fw-bold text-success my-1" style="font-family: var(--fuente-titulos);">
+                {{ current_user.saldo_puntos_disponibles }} <small class="fs-6 fw-semibold">pts</small>
+            </div>
+            <small class="text-muted fw-medium">Listos para canjear en catálogo</small>
+        </div>
+    </div>
+
+    <!-- Saldo Retenido -->
+    <div class="col-sm-6 col-lg-3">
+        <div class="tarjeta-vibrante p-4 h-100 text-center" style="background: linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%); border: 2px solid rgba(245, 158, 11, 0.35);">
+            <div class="d-inline-flex p-2 rounded-circle bg-white text-warning shadow-sm mb-2">
+                <i class="bi bi-hourglass-split fs-4"></i>
+            </div>
+            <span class="text-amber small text-uppercase fw-bold d-block" style="color: #B45309; letter-spacing: 0.04em;">Saldo Retenido</span>
+            <div class="fs-2 fw-bold text-warning my-1" style="font-family: var(--fuente-titulos); color: #D97706 !important;">
+                {{ current_user.saldo_puntos_retenidos }} <small class="fs-6 fw-semibold">pts</small>
+            </div>
+            <small class="text-muted fw-medium">En moderación de joyería</small>
+        </div>
+    </div>
+
+    <!-- Total Histórico Ganado -->
+    <div class="col-sm-6 col-lg-3">
+        <div class="tarjeta-vibrante p-4 h-100 text-center" style="background: linear-gradient(135deg, #ECFEFF 0%, #CFFAFE 100%); border: 2px solid rgba(6, 182, 212, 0.35);">
+            <div class="d-inline-flex p-2 rounded-circle bg-white text-info shadow-sm mb-2">
+                <i class="bi bi-arrow-up-right-circle fs-4"></i>
+            </div>
+            <span class="text-info-emphasis small text-uppercase fw-bold d-block" style="letter-spacing: 0.04em;">Total Acreditado</span>
+            <div class="fs-2 fw-bold text-info my-1" style="font-family: var(--fuente-titulos); color: #0891B2 !important;">
+                +{{ total_acreditado }} <small class="fs-6 fw-semibold">pts</small>
+            </div>
+            <small class="text-muted fw-medium">Por prendas y joyas publicadas</small>
+        </div>
+    </div>
+
+    <!-- Total Histórico Canjeado -->
+    <div class="col-sm-6 col-lg-3">
+        <div class="tarjeta-vibrante p-4 h-100 text-center" style="background: linear-gradient(135deg, #FFF1F2 0%, #FFE4E6 100%); border: 2px solid rgba(244, 63, 94, 0.3);">
+            <div class="d-inline-flex p-2 rounded-circle bg-white text-danger shadow-sm mb-2">
+                <i class="bi bi-arrow-down-left-circle fs-4"></i>
+            </div>
+            <span class="text-danger small text-uppercase fw-bold d-block" style="letter-spacing: 0.04em;">Total Canjeado</span>
+            <div class="fs-2 fw-bold text-danger my-1" style="font-family: var(--fuente-titulos);">
+                -{{ total_debitado }} <small class="fs-6 fw-semibold">pts</small>
+            </div>
+            <small class="text-muted fw-medium">En adquisiciones sostenibles</small>
+        </div>
+    </div>
+</div>
+
+<!-- Tabla del Libro Mayor (Kardex Inmutable) -->
+<div class="tabla-vibrante-contenedor mb-4">
+    <div class="tarjeta-header-gradiente d-flex justify-content-between align-items-center">
+        <div class="d-flex align-items-center gap-2">
+            <i class="bi bi-journal-bookmark-fill text-success fs-5"></i>
+            <h5 class="fw-bold mb-0 text-dark" style="font-family: var(--fuente-titulos);">
+                Asientos Contables del Usuario (SQL Server)
+            </h5>
+        </div>
+        <span class="badge badge-pildora bg-white text-muted border small">
+            <i class="bi bi-shield-check text-success"></i> Transacciones ACID Verificadas
+        </span>
+    </div>
+
+    {% if movimientos %}
+    <div class="table-responsive">
+        <table class="table tabla-vibrante table-hover align-middle mb-0" style="font-size: 0.88rem;">
+            <thead>
+                <tr>
+                    <th class="ps-4">ID Asiento</th>
+                    <th>Fecha y Hora</th>
+                    <th>Tipo de Movimiento</th>
+                    <th>Prenda Referencia</th>
+                    <th class="text-center">Saldo Anterior</th>
+                    <th class="text-center">Variación</th>
+                    <th class="text-center">Saldo Posterior</th>
+                    <th class="pe-4">Auditoría Técnica y Desglose Matemático</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for m in movimientos %}
+                <tr>
+                    <td class="ps-4 font-monospace small fw-bold text-muted">#MOV-{{ m.id_movimiento }}</td>
+                    <td class="small text-muted">{{ m.fecha_movimiento.strftime('%d/%m/%Y %H:%M:%S') }}</td>
+                    <td>
+                        {% if m.tipo_movimiento == 'CREDITO_PUBLICACION' %}
+                            <span class="badge badge-pildora badge-familia-vegetal">
+                                <i class="bi bi-plus-circle-fill"></i> Crédito Publicación
+                            </span>
+                        {% elif m.tipo_movimiento == 'CREDITO_APROBACION_JOYA' %}
+                            <span class="badge badge-pildora badge-familia-joya">
+                                <i class="bi bi-gem"></i> Aprobación de Joya
+                            </span>
+                        {% elif m.tipo_movimiento == 'DEBITO_ADQUISICION' %}
+                            <span class="badge badge-pildora" style="background: #FEE2E2; color: #991B1B; border: 1px solid #FECACA;">
+                                <i class="bi bi-dash-circle-fill"></i> Débito Canje
+                            </span>
+                        {% else %}
+                            <span class="badge badge-pildora bg-secondary text-white">{{ m.tipo_movimiento }}</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if m.prenda_referencia %}
+                            <a href="{{ url_for('prendas.detalle', id_prenda=m.prenda_referencia.id_prenda) }}" class="text-dark fw-bold text-decoration-none">
+                                <i class="bi bi-tag-fill text-success me-1"></i> {{ m.prenda_referencia.titulo_publicacion[:28] }}{% if m.prenda_referencia.titulo_publicacion|length > 28 %}...{% endif %}
+                            </a>
+                        {% else %}
+                            <span class="badge bg-light text-muted border">Ajuste Contable Admin</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-center font-monospace text-muted">{{ m.saldo_anterior }} pts</td>
+                    <td class="text-center">
+                        {% if m.tipo_movimiento in ('CREDITO_PUBLICACION', 'CREDITO_APROBACION_JOYA') %}
+                            <span class="fw-bold text-success fs-6">
+                                <i class="bi bi-arrow-up-short"></i>+{{ m.cantidad_puntos }} pts
+                            </span>
+                        {% else %}
+                            <span class="fw-bold text-danger fs-6">
+                                <i class="bi bi-arrow-down-short"></i>-{{ m.cantidad_puntos }} pts
+                            </span>
+                        {% endif %}
+                    </td>
+                    <td class="text-center font-monospace fw-bold text-dark">{{ m.saldo_posterior }} pts</td>
+                    <td class="pe-4 font-monospace small text-muted" style="max-width: 340px;" title="{{ m.descripcion_auditoria }}">
+                        <div class="p-2 bg-light rounded-3 border" style="font-size: 0.76rem;">
+                            {{ m.descripcion_auditoria }}
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <!-- Estado Vacío Cuando No Hay Movimientos -->
+    <div class="p-5 text-center text-muted">
+        <div class="bg-success-subtle text-success p-3 rounded-circle d-inline-flex mx-auto mb-3">
+            <i class="bi bi-journal-x fs-1"></i>
+        </div>
+        <h5 class="fw-bold" style="font-family: var(--fuente-titulos);">No tienes movimientos registrados todavía</h5>
+        <p class="small text-muted mb-3">Publica tu primera prenda o accesorio para ver aquí la cotización formal de puntos.</p>
+        <div>
+            <a href="{{ url_for('prendas.publicar') }}" class="btn btn-vibrante-esmeralda">
+                <i class="bi bi-plus-circle-fill"></i> Publicar Mi Primera Prenda
+            </a>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

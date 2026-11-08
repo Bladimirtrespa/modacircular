@@ -1,0 +1,244 @@
+{% extends "base.html" %}
+
+{% block titulo %}Constructor de Trueque Directo - ModaCircular{% endblock %}
+
+{% block contenido %}
+<div class="mb-4">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3">
+        <div>
+            <h2 class="titulo-amigable mb-1">
+                <i class="bi bi-arrow-left-right text-success me-2"></i> Constructor de Trueques Directos
+            </h2>
+            <p class="text-muted small mb-0">
+                Selecciona los artículos que ofreces de tu vitrina y los que solicitas a <strong>{{ receptor.nombre_completo }}</strong>.
+            </p>
+        </div>
+        <a href="{{ url_for('inventario.ver_vitrina', id_usuario=receptor.id_usuario) }}" class="btn btn-outline-secondary btn-sm rounded-pill">
+            <i class="bi bi-arrow-left me-1"></i> Volver a Vitrina de {{ receptor.nombre_completo.split()[0] }}
+        </a>
+    </div>
+</div>
+
+<form method="POST" action="{{ url_for('trueques.enviar_propuesta') }}" id="formTrueque">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <input type="hidden" name="id_receptor" value="{{ receptor.id_usuario }}">
+    {% if id_oferta_padre %}
+    <input type="hidden" name="id_oferta_padre" value="{{ id_oferta_padre }}">
+    {% endif %}
+
+    <!-- =======================================================================
+         BARRA FLOTANTE DE EQUILIBRIO DE VALOR EN PUNTOS REFERENCIALES
+         ======================================================================= -->
+    <div class="tarjeta-vibrante p-4 mb-4 shadow-sm" style="background: linear-gradient(135deg, #0F172A 0%, #1E293B 100%); color: white;">
+        <div class="row align-items-center g-3">
+            <div class="col-md-4 text-center text-md-start">
+                <span class="text-white-50 small text-uppercase fw-bold d-block">Tus Artículos Ofrecidos</span>
+                <span class="display-6 fw-bold text-success" id="indicadorPuntosOfrecidos">0</span>
+                <span class="text-white-50">pts</span>
+                <span class="badge bg-success bg-opacity-25 text-success rounded-pill ms-2" id="conteoOfrecidos">0 ítems</span>
+            </div>
+
+            <div class="col-md-4 text-center">
+                <span class="text-white-50 small text-uppercase fw-bold d-block mb-1">Equilibrio del Intercambio</span>
+                <div class="progress mb-2" style="height: 12px; background: rgba(255,255,255,0.1); border-radius: 10px;">
+                    <div id="barraEquilibrio" class="progress-bar bg-success progress-bar-striped progress-bar-animated" role="progressbar" style="width: 50%;"></div>
+                </div>
+                <div id="badgeDiferencia" class="badge bg-secondary rounded-pill px-3 py-1">
+                    Diferencia: 0 pts
+                </div>
+            </div>
+
+            <div class="col-md-4 text-center text-md-end">
+                <span class="text-white-50 small text-uppercase fw-bold d-block">Artículos Solicitados</span>
+                <span class="display-6 fw-bold text-warning" id="indicadorPuntosSolicitados">0</span>
+                <span class="text-white-50">pts</span>
+                <span class="badge bg-warning bg-opacity-25 text-warning rounded-pill ms-2" id="conteoSolicitados">0 ítems</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- =======================================================================
+         DOBLE PANEL DE INVENTARIOS (N a M)
+         ======================================================================= -->
+    <div class="row g-4 mb-4">
+        <!-- PANEL IZQUIERDO: TU INVENTARIO -->
+        <div class="col-lg-6">
+            <div class="tarjeta-vibrante h-100 p-3 p-md-4" style="border-top: 5px solid #10B981 !important;">
+                <div class="d-flex align-items-center justify-content-between pb-3 mb-3 border-bottom">
+                    <div>
+                        <h5 class="fw-bold text-dark mb-0">
+                            <i class="bi bi-box-seam text-success me-1"></i> Tu Inventario (Lo que ofreces)
+                        </h5>
+                        <small class="text-muted">Marca los artículos que estás dispuesto a dar</small>
+                    </div>
+                    <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill">
+                        {{ prendas_ofertante|length }} disponibles
+                    </span>
+                </div>
+
+                {% if prendas_ofertante %}
+                <div class="row row-cols-1 row-cols-sm-2 g-3 overflow-y-auto" style="max-height: 550px;">
+                    {% for p in prendas_ofertante %}
+                    <div class="col">
+                        <label class="card h-100 border p-2 rounded-3 tarjeta-item-trueque position-relative cursor-pointer shadow-sm" style="cursor: pointer; transition: all 0.2s;">
+                            <input type="checkbox" name="prendas_ofrecidas" value="{{ p.id_prenda }}" 
+                                   data-puntos="{{ p.puntos_valoracion }}" 
+                                   class="form-check-input position-absolute top-0 start-0 m-2 z-1 check-ofrecido"
+                                   {% if p.id_prenda in items_ofrecidos_preseleccionados %}checked{% endif %}
+                                   onchange="actualizarEquilibrio()">
+                            
+                            <span class="badge bg-dark bg-opacity-75 text-warning position-absolute top-0 end-0 m-2 small">
+                                {{ p.puntos_valoracion }} pts
+                            </span>
+
+                            <div class="bg-light rounded-2 overflow-hidden mb-2 d-flex align-items-center justify-content-center" style="height: 120px;">
+                                {% if p.archivo_portada %}
+                                <img src="{{ url_for('static', filename=p.archivo_portada.ruta_archivo) }}" alt="{{ p.titulo_publicacion }}" class="w-100 h-100 object-fit-cover" onerror="this.onerror=null; this.src='https://placehold.co/200x200/10b981/ffffff?text={{ p.titulo_publicacion|urlencode }}';">
+                                {% else %}
+                                <i class="bi bi-image text-muted fs-2"></i>
+                                {% endif %}
+                            </div>
+
+                            <strong class="small text-dark text-truncate d-block" title="{{ p.titulo_publicacion }}">{{ p.titulo_publicacion }}</strong>
+                            <small class="text-muted text-truncate d-block" style="font-size: 0.72rem;">{{ p.material.nombre_material }} &bull; Talla {{ p.talla }}</small>
+                        </label>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="p-4 text-center text-muted">
+                    <i class="bi bi-inbox fs-1 text-secondary opacity-50 d-block mb-2"></i>
+                    <p class="small mb-2">No tienes artículos disponibles en tu inventario para ofrecer.</p>
+                    <a href="{{ url_for('prendas.publicar') }}" class="btn btn-sm btn-outline-success rounded-pill">Publicar Artículo</a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- PANEL DERECHO: INVENTARIO DEL RECEPTOR -->
+        <div class="col-lg-6">
+            <div class="tarjeta-vibrante h-100 p-3 p-md-4" style="border-top: 5px solid #F59E0B !important;">
+                <div class="d-flex align-items-center justify-content-between pb-3 mb-3 border-bottom">
+                    <div>
+                        <h5 class="fw-bold text-dark mb-0">
+                            <i class="bi bi-gift text-warning me-1"></i> Vitrina de {{ receptor.nombre_completo.split()[0] }} (Lo que pides)
+                        </h5>
+                        <small class="text-muted">Marca los artículos que deseas recibir a cambio</small>
+                    </div>
+                    <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle rounded-pill">
+                        {{ prendas_receptor|length }} disponibles
+                    </span>
+                </div>
+
+                {% if prendas_receptor %}
+                <div class="row row-cols-1 row-cols-sm-2 g-3 overflow-y-auto" style="max-height: 550px;">
+                    {% for p in prendas_receptor %}
+                    <div class="col">
+                        <label class="card h-100 border p-2 rounded-3 tarjeta-item-trueque position-relative cursor-pointer shadow-sm" style="cursor: pointer; transition: all 0.2s;">
+                            <input type="checkbox" name="prendas_solicitadas" value="{{ p.id_prenda }}" 
+                                   data-puntos="{{ p.puntos_valoracion }}" 
+                                   class="form-check-input position-absolute top-0 start-0 m-2 z-1 check-solicitado"
+                                   {% if p.id_prenda in items_solicitados_preseleccionados %}checked{% endif %}
+                                   onchange="actualizarEquilibrio()">
+                            
+                            <span class="badge bg-dark bg-opacity-75 text-warning position-absolute top-0 end-0 m-2 small">
+                                {{ p.puntos_valoracion }} pts
+                            </span>
+
+                            <div class="bg-light rounded-2 overflow-hidden mb-2 d-flex align-items-center justify-content-center" style="height: 120px;">
+                                {% if p.archivo_portada %}
+                                <img src="{{ url_for('static', filename=p.archivo_portada.ruta_archivo) }}" alt="{{ p.titulo_publicacion }}" class="w-100 h-100 object-fit-cover" onerror="this.onerror=null; this.src='https://placehold.co/200x200/f59e0b/ffffff?text={{ p.titulo_publicacion|urlencode }}';">
+                                {% else %}
+                                <i class="bi bi-image text-muted fs-2"></i>
+                                {% endif %}
+                            </div>
+
+                            <strong class="small text-dark text-truncate d-block" title="{{ p.titulo_publicacion }}">{{ p.titulo_publicacion }}</strong>
+                            <small class="text-muted text-truncate d-block" style="font-size: 0.72rem;">{{ p.material.nombre_material }} &bull; Talla {{ p.talla }}</small>
+                        </label>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="p-4 text-center text-muted">
+                    <i class="bi bi-inbox fs-1 text-secondary opacity-50 d-block mb-2"></i>
+                    <p class="small mb-0">Este usuario no tiene artículos disponibles para negociar en este momento.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- MENSAJE Y ACCIÓN DE ENVÍO -->
+    <div class="tarjeta-vibrante p-4 mb-5">
+        <div class="mb-3">
+            <label class="form-label fw-bold text-dark small">
+                <i class="bi bi-chat-left-text-fill text-primary me-1"></i> Mensaje de Propuesta (Opcional):
+            </label>
+            <textarea name="mensaje_propuesta" class="form-control" rows="2" placeholder="Hola, me interesan mucho tus artículos. Te ofrezco mis prendas que están en perfecto estado..."></textarea>
+        </div>
+
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-center gap-3">
+            <div class="text-muted small">
+                <i class="bi bi-shield-check text-success me-1"></i> Al enviar la propuesta, los artículos quedan en estado <code>RESERVADA_TRUEQUE</code> para evitar colisiones.
+            </div>
+            <button type="submit" id="btnEnviarOferta" class="btn btn-vibrante-esmeralda btn-lg py-3 px-5 shadow fw-bold" disabled>
+                <i class="bi bi-send-fill me-2"></i> Enviar Oferta de Trueque
+            </button>
+        </div>
+    </div>
+</form>
+
+<script>
+function actualizarEquilibrio() {
+    let ptsOfrecidos = 0;
+    let cantOfrecidos = 0;
+    document.querySelectorAll('.check-ofrecido:checked').forEach(cb => {
+        ptsOfrecidos += parseInt(cb.getAttribute('data-puntos') || 0);
+        cantOfrecidos++;
+    });
+
+    let ptsSolicitados = 0;
+    let cantSolicitados = 0;
+    document.querySelectorAll('.check-solicitado:checked').forEach(cb => {
+        ptsSolicitados += parseInt(cb.getAttribute('data-puntos') || 0);
+        cantSolicitados++;
+    });
+
+    document.getElementById('indicadorPuntosOfrecidos').innerText = ptsOfrecidos;
+    document.getElementById('conteoOfrecidos').innerText = cantOfrecidos + ' ítems';
+
+    document.getElementById('indicadorPuntosSolicitados').innerText = ptsSolicitados;
+    document.getElementById('conteoSolicitados').innerText = cantSolicitados + ' ítems';
+
+    const diferencia = ptsOfrecidos - ptsSolicitados;
+    const badgeDif = document.getElementById('badgeDiferencia');
+    const barra = document.getElementById('barraEquilibrio');
+
+    let totalAmbos = ptsOfrecidos + ptsSolicitados;
+    let porcentaje = 50;
+    if (totalAmbos > 0) {
+        porcentaje = Math.min(100, Math.max(0, (ptsOfrecidos / totalAmbos) * 100));
+    }
+    barra.style.width = porcentaje + '%';
+
+    if (diferencia > 0) {
+        badgeDif.className = 'badge bg-success rounded-pill px-3 py-1';
+        badgeDif.innerText = 'Ofreces +' + diferencia + ' pts de más';
+    } else if (diferencia < 0) {
+        badgeDif.className = 'badge bg-danger rounded-pill px-3 py-1';
+        badgeDif.innerText = 'Pides ' + Math.abs(diferencia) + ' pts de más';
+    } else {
+        badgeDif.className = 'badge bg-warning text-dark rounded-pill px-3 py-1';
+        badgeDif.innerText = 'Trato 100% Equilibrado (0 pts dif)';
+    }
+
+    const btn = document.getElementById('btnEnviarOferta');
+    btn.disabled = !(cantOfrecidos > 0 && cantSolicitados > 0);
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    actualizarEquilibrio();
+});
+</script>
+{% endblock %}

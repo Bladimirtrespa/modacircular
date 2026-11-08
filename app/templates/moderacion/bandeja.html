@@ -1,0 +1,206 @@
+{% extends "base.html" %}
+
+{% block titulo %}Bandeja de Moderación de Joyería Preciosa - ModaCircular{% endblock %}
+
+{% block contenido %}
+<!-- Encabezado de la Sección con Estilo Joyería / Lujo -->
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+    <div>
+        <div class="d-flex align-items-center gap-2 mb-1">
+            <span class="icono-marca" style="width: 38px; height: 38px; border-radius: 10px; background: linear-gradient(135deg, #8B5CF6, #F59E0B);">
+                <i class="bi bi-shield-check fs-5"></i>
+            </span>
+            <h2 class="fw-bold mb-0 text-dark" style="font-family: var(--fuente-titulos); letter-spacing: -0.02em;">
+                Bandeja de Moderación de Joyería y Metales Preciosos
+            </h2>
+        </div>
+        <p class="text-muted small mb-0 ms-md-5 ps-md-2">
+            Revisión técnica de autenticidad, contrastes de ley y peritaje multimedia para piezas del <strong>Grupo F</strong>
+        </p>
+    </div>
+    <div class="d-flex align-items-center gap-2">
+        <span class="badge badge-pildora badge-familia-joya fs-6 px-3 py-2 shadow-sm">
+            <i class="bi bi-clock-history"></i> Pendientes de Revisión: <strong>{{ pendientes|length }}</strong>
+        </span>
+    </div>
+</div>
+
+<!-- Pestañas de Navegación con Estilo Vibrante -->
+<ul class="nav nav-pills mb-4 p-1 bg-white rounded-4 shadow-sm border d-inline-flex" id="pills-tab" role="tablist">
+    <li class="nav-item" role="presentation">
+        <button class="nav-link active fw-bold px-4 py-2" id="pills-pendientes-tab" data-bs-toggle="pill" data-bs-target="#pills-pendientes" type="button" role="tab" style="border-radius: var(--radio-boton);">
+            <i class="bi bi-hourglass-split me-1 text-warning"></i> Solicitudes Pendientes ({{ pendientes|length }})
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link fw-bold px-4 py-2" id="pills-resueltas-tab" data-bs-toggle="pill" data-bs-target="#pills-resueltas" type="button" role="tab" style="border-radius: var(--radio-boton);">
+            <i class="bi bi-check2-all me-1 text-success"></i> Histórico de Resoluciones ({{ resueltas|length }})
+        </button>
+    </li>
+</ul>
+
+<div class="tab-content" id="pills-tabContent">
+    <!-- Pestaña 1: Solicitudes Pendientes -->
+    <div class="tab-pane fade show active" id="pills-pendientes" role="tabpanel">
+        {% if pendientes %}
+        <div class="tabla-vibrante-contenedor mb-4">
+            <div class="tarjeta-header-joya d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="bi bi-gem text-purple fs-5" style="color: var(--color-violeta);"></i>
+                    <h5 class="fw-bold mb-0 text-dark" style="font-family: var(--fuente-titulos);">
+                        Piezas en Espera de Dictamen Técnico
+                    </h5>
+                </div>
+                <span class="badge badge-pildora bg-white text-muted border small">
+                    <i class="bi bi-lock-fill text-warning"></i> Puntos en Retención Preventiva
+                </span>
+            </div>
+
+            <div class="table-responsive">
+                <table class="table tabla-vibrante table-hover align-middle mb-0" style="font-size: 0.88rem;">
+                    <thead>
+                        <tr>
+                            <th class="ps-4">ID Orden</th>
+                            <th>Pieza de Joyería</th>
+                            <th>Material / Ley Declarada</th>
+                            <th>Usuario Solicitante</th>
+                            <th class="text-center">Puntos Retenidos</th>
+                            <th>Fecha Carga</th>
+                            <th class="text-end pe-4">Acción Pericial</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for s in pendientes %}
+                        <tr>
+                            <td class="ps-4 font-monospace small fw-bold text-muted">#SOL-{{ s.id_solicitud_aprobacion }}</td>
+                            <td>
+                                <div class="d-flex align-items-center gap-2">
+                                    {% set portada = s.prenda.archivo_portada %}
+                                    {% if portada and portada.tipo_archivo != 'VIDEO' %}
+                                        <img src="{{ url_for('static', filename=portada.ruta_archivo) }}" class="rounded-3 border shadow-sm" style="width: 48px; height: 48px; object-fit: cover;" alt="Miniatura">
+                                    {% else %}
+                                        <div class="bg-dark text-warning rounded-3 border d-flex align-items-center justify-content-center shadow-sm" style="width: 48px; height: 48px;">
+                                            <i class="bi bi-camera-reels-fill fs-5"></i>
+                                        </div>
+                                    {% endif %}
+                                    <div>
+                                        <strong class="d-block text-dark">{{ s.prenda.titulo_publicacion }}</strong>
+                                        <small class="text-muted">{{ s.prenda.categoria.nombre_categoria }} &bull; Talla: <span class="badge bg-light text-dark border">{{ s.prenda.talla }}</span></small>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="badge badge-pildora badge-familia-joya">
+                                    <i class="bi bi-gem"></i> {{ s.prenda.material.nombre_material }}
+                                </span>
+                            </td>
+                            <td>
+                                <div class="fw-bold text-dark">{{ s.prenda.propietario.nombre_completo }}</div>
+                                <small class="text-muted"><i class="bi bi-geo-alt-fill text-danger me-1"></i>{{ s.prenda.propietario.ciudad_ubicacion }}</small>
+                            </td>
+                            <td class="text-center">
+                                <span class="badge badge-pildora" style="background: #FEF3C7; color: #92400E; border: 1px solid #FDE68A; font-size: 0.88rem;">
+                                    <i class="bi bi-hourglass-split"></i> {{ s.prenda.puntos_valoracion }} pts
+                                </span>
+                            </td>
+                            <td class="small text-muted">{{ s.fecha_solicitud.strftime('%d/%m/%Y %H:%M') }}</td>
+                            <td class="text-end pe-4">
+                                <a href="{{ url_for('moderacion.revisar', id_solicitud=s.id_solicitud_aprobacion) }}" class="btn btn-vibrante-ambar btn-sm shadow-sm">
+                                    <i class="bi bi-search"></i> Dictaminar
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% else %}
+        <!-- Estado Vacío Cuando Todo Está al Día -->
+        <div class="tarjeta-vibrante p-5 text-center my-4">
+            <div class="bg-success-subtle text-success p-3 rounded-circle d-inline-flex mx-auto mb-3 shadow-sm">
+                <i class="bi bi-check2-circle fs-1"></i>
+            </div>
+            <h4 class="fw-bold" style="font-family: var(--fuente-titulos);">¡Bandeja de Moderación al Día!</h4>
+            <p class="text-muted small mb-0">No hay piezas de joyería ni metales preciosos pendientes de peritaje en este momento.</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Pestaña 2: Solicitudes Resueltas -->
+    <div class="tab-pane fade" id="pills-resueltas" role="tabpanel">
+        {% if resueltas %}
+        <div class="tabla-vibrante-contenedor mb-4">
+            <div class="tarjeta-header-gradiente d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="bi bi-clock-history text-primary fs-5"></i>
+                    <h5 class="fw-bold mb-0 text-dark" style="font-family: var(--fuente-titulos);">
+                        Historial de Dictámenes de Moderación
+                    </h5>
+                </div>
+                <span class="badge badge-pildora bg-white text-muted border small">Total: {{ resueltas|length }} resoluciones</span>
+            </div>
+
+            <div class="table-responsive">
+                <table class="table tabla-vibrante table-hover align-middle mb-0" style="font-size: 0.88rem;">
+                    <thead>
+                        <tr>
+                            <th class="ps-4">ID</th>
+                            <th>Artículo</th>
+                            <th>Material / Taxonomía</th>
+                            <th class="text-center">Resolución</th>
+                            <th>Moderador</th>
+                            <th>Dictamen / Observaciones Técnicas</th>
+                            <th>Fecha</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for r in resueltas %}
+                        <tr>
+                            <td class="ps-4 font-monospace small text-muted">#{{ r.id_solicitud_aprobacion }}</td>
+                            <td>
+                                <strong class="text-dark d-block">{{ r.prenda.titulo_publicacion }}</strong>
+                                <small class="text-muted"><i class="bi bi-person text-secondary me-1"></i>{{ r.prenda.propietario.nombre_completo }}</small>
+                            </td>
+                            <td>
+                                <span class="badge badge-pildora badge-familia-joya">{{ r.prenda.material.nombre_material }}</span>
+                            </td>
+                            <td class="text-center">
+                                {% if r.estado_revision == 'APROBADA' %}
+                                    <span class="badge badge-pildora badge-familia-vegetal">
+                                        <i class="bi bi-check-circle-fill"></i> Aprobada (Puntos Liberados)
+                                    </span>
+                                {% else %}
+                                    <span class="badge badge-pildora" style="background: #FEE2E2; color: #991B1B; border: 1px solid #FECACA;">
+                                        <i class="bi bi-x-circle-fill"></i> Rechazada
+                                    </span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="badge bg-light text-dark border">
+                                    <i class="bi bi-person-badge text-primary me-1"></i>{{ r.revisor.nombre_completo if r.revisor else 'Sistema Automático' }}
+                                </span>
+                            </td>
+                            <td class="small text-muted" style="max-width: 300px;">
+                                <div class="p-2 bg-light rounded-3 border" style="font-size: 0.8rem;">
+                                    {{ r.observaciones_revisor or 'Sin observaciones registradas' }}
+                                </div>
+                            </td>
+                            <td class="small text-muted">
+                                {{ r.fecha_resolucion.strftime('%d/%m/%Y %H:%M') if r.fecha_resolucion else '--' }}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% else %}
+        <div class="tarjeta-vibrante p-4 text-center text-muted my-3">
+            <i class="bi bi-inbox fs-2 text-muted d-block mb-2"></i>
+            <span>No hay resoluciones registradas aún en el histórico de auditoría.</span>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
